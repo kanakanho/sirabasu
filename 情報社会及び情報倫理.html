@@ -1,0 +1,3976 @@
+
+
+
+
+
+
+
+
+
+
+
+<script language="javascript">
+<!--
+/**
+ * 多重送信制御を行う。
+ */
+isSubmit = false;
+isChildOpen = false;
+isPdfSubmit = false;
+isCsvSubmit = false;
+isUploadSubmit = false;
+isLoad = false;
+var pdfName = '';
+
+var childWindow; // 子ダイアログ用
+var subWindow; // 子ダイアログ用
+
+function checkSubmit() {
+	if (submitFlag == false) {
+		return false;
+	}
+}
+
+function dbClick() {
+	return dbPrintClick('submit');
+}
+
+function dbClickWithAlert() {
+	submitFlag = true;
+	// 画面が完全にロードし切れていない場合、または既にボタン操作が行われている場合
+	if(!isLoad || isSubmit) {
+	    alert('現在処理中です。しばらくお待ちください。');
+		return false;
+	}
+	isSubmit = true;
+	return true;
+}
+
+function dbChildOpen(url, width, height) {
+	submitFlag = true;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+		childWindow.focus();
+	} else {
+		if(navigator.userAgent.indexOf('Safari') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+			childWindow.focus();
+		// Safari以外
+		} else {
+			if (childWindow.closed) {
+				childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+				childWindow.focus();
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+}
+function dbChildOpenTsuchisho(url, width, height) {
+	submitFlag = true;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		// ▼ 01:CSTM-NCU-01 MODS
+		// 成績通知書の住所選択ダイアログ除去
+		//childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+		childWindow = window.open(url, 'subWindow', 'scrollbars=yes, resizable=yes, status=yes');
+		// ▲ 01:CSTM-NCU-01 MODE
+		childWindow.focus();
+	} else {
+		// Safari1.0対応
+		if(navigator.userAgent.indexOf('Safari/85') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			// ▼ 01:CSTM-NCU-01 MODS
+			// 成績通知書の住所選択ダイアログ除去
+			//childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+			childWindow = window.open(url, 'subWindow', 'scrollbars=yes, resizable=yes');
+			// ▲ 01:CSTM-NCU-01 MODE
+			childWindow.focus();
+		// Safari1.0以外
+		} else {
+			if (childWindow.closed) {
+				try {
+				// ▼ 01:CSTM-NCU-01 MODS
+				// 成績通知書の住所選択ダイアログ除去
+				//childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+				childWindow = window.open(url, 'subWindow', 'scrollbars=yes, resizable=yes');
+				// ▲ 01:CSTM-NCU-01 MODE
+				childWindow.focus();
+				} catch (e) {
+				}
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+}
+/**
+ * 子ウインドウを開いた後、そのウインドウをターゲットとしてフォームを送信する
+ */
+function dbChildOpenAndSubmitForm(form, url, width, height) {
+	submitFlag = true;
+	var doOpen = false;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		doOpen = true;
+	} else {
+		// Safari対応
+		if(navigator.userAgent.indexOf('Safari') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			doOpen = true;
+		// Safari1.0以外
+		} else {
+			if (childWindow.closed) {
+				doOpen = true;
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+	if (doOpen) {
+        var actionBackup = form.action;
+        childWindow = window.open("about:blank", 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+        // 子画面をターゲットとしてサブミット処理実行
+        form.action = url;
+        form.target = 'subWindow';
+        form.submit();
+        form.action = actionBackup;
+        form.target = "";
+
+        childWindow.focus();
+	}
+}
+
+function dbLinkClick(arg) {
+
+	submitFlag = true;
+	// 画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(isLoad) {
+		// 既にボタン操作が行われている場合、submit処理を行わせない
+		if (!isSubmit) {
+			isSubmit = true;
+    		document.location.href = arg;
+		}
+	}
+}
+
+function dbCsvClick() {
+	submitFlag = true;
+	// ファイル出力ボタンが押された場合
+	if (isCsvSubmit) {
+		if (confirm("再度、ファイル出力処理を行いますか？")) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		isCsvSubmit = true;
+		return true;
+	}
+}
+
+function dbPrintClick_ServerDL(arg) {
+
+	submitFlag = true;
+	// 印刷ボタンの２度押しにはアラートメッセージを表示する
+	if (isPdfSubmit) {
+		alert("現在印刷処理中です。しばらくお待ちください。");
+		return false;
+	}
+
+	// 印刷ボタンが押された場合、印刷実行中フラグを「true」に設定する
+	if (arg == 'print') {
+		isPdfSubmit = true;
+	}
+
+	// 画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(!isLoad) {
+		return false;
+	}
+
+	// 既にボタン操作が行われている場合、submit処理を行わせない
+	if (isSubmit) {
+		return false;
+	}
+	isSubmit = true;
+	return true;
+}
+
+function dbPrintClick(arg, elm, buttonName, buttonValue) {
+	submitFlag = true;
+	// 印刷ボタンの２度押しにはアラートメッセージを表示する
+	if (isPdfSubmit) {
+		alert("現在印刷処理中です。しばらくお待ちください。");
+		return false;
+	}
+
+	// 印刷ボタンが押された場合、印刷実行中フラグを「true」に設定する
+	if (arg == 'print') {
+		if (arguments.length == '1') {
+			return dbPrintClick_ServerDL(arg);
+		} else {
+			// 帳票イメージがjsp実行結果の代わりに返却されるようになるため，
+			// PDF表示用ウインドウを開き，このウインドウをターゲットにしてフォームを送信する
+			if (elm != null) {
+				if (!isLoad || isSubmit) {
+					return false;
+				}
+
+				var form = elm.form;
+				return openSubWindowAndSubmitForm(form, buttonName, buttonValue);
+			}
+		}
+
+		isPdfSubmit = true;
+	}
+
+	// 画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(!isLoad) {
+		return false;
+	}
+
+	// 既にボタン操作が行われている場合、submit処理を行わせない
+	if (isSubmit) {
+		return false;
+	}
+	isSubmit = true;
+
+	return true;
+}
+
+/**
+ * 印刷処理を実行する
+ */
+function dbLinkPrintClick(form, buttonName, buttonValue) {
+	if (!isLoad || isSubmit) {
+		return false;
+	}
+	return openSubWindowAndSubmitForm(form, buttonName, buttonValue);
+}
+
+/**
+ * ファイル取込処理を実行する
+ */
+function dbUploadClick() {
+	submitFlag = true;
+
+	// 印刷ボタンの２度押しにはアラートメッセージを表示する
+	if (isUploadSubmit) {
+		alert("現在取込処理中です。しばらくお待ちください。");
+		return false;
+	}
+
+	// 二重起動または画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(!isLoad || isSubmit) {
+		return false;
+	}
+
+	isSubmit = true;
+    isUploadSubmit = true;
+
+    return true;
+}
+
+/**
+ * 子ウインドウを開いた後、そのウインドウをターゲットとしてフォームを送信する
+ */
+function openSubWindowAndSubmitForm(form, buttonName, buttonValue) {
+	var actionBackup = null;
+	var newEl = null;
+
+	if (isSubmit) {
+		return false;
+	}
+	isSubmit = true;
+
+	// 起動対象のアクションがLcDispatchActionの場合，指定された名称の
+	// ボタンが押されたことにする
+	if (buttonName != null) {
+		if (buttonValue == null) buttonValue = "true";
+
+		if (navigator.userAgent.indexOf("MSIE 5") != -1 &&
+			navigator.userAgent.indexOf("Mac") != -1) {
+			newEl = document.createElement("<input type=hidden>");
+			newEl.name = buttonName;
+			newEl.value = buttonValue;
+			form.add(newEl);
+		} else {
+			actionBackup = form.action;
+			form.action = form.action + "?" + buttonName + "=" + buttonValue;
+		}
+	}
+
+	// 新規ウインドウを開く
+	var pdfWin = window;
+	if (navigator.userAgent.indexOf("Safari/85") == -1) {
+		try {
+		pdfWin = window.open("about:blank", "PDF", "resizable=yes,scrollbars=yes");
+		form.target = "PDF";
+		form.submit();
+		form.target = "";
+		} catch (e) {
+			alert("PDF画面を閉じてください");
+		}
+	} else {
+		form.submit();
+	}
+
+	// フォームのactionを変更している場合は元に戻す
+	if (actionBackup != null) {
+		form.action = actionBackup;
+		actionBackup = null;
+	}
+
+	if (newEl != null) {
+		form.remove(newEl);
+	}
+
+	// PDF表示ウインドウを最前面に表示
+	pdfWin.focus();
+
+	isSubmit = false;
+
+	return false;
+}
+
+/*
+ * データの更新が行われる画面において、メニューに戻る前に確認メッセージを表示する
+ */
+function confirmMessage(sessionId, message) {
+	if (confirm(message)) {
+		if (!isSubmit) {
+			window.location="/kyoumu/mainMenu.do;jsessionid=" + sessionId;
+		}
+	}
+}
+
+/*
+ * データの更新が行われる画面において、戻るボタンが押された場合に確認メッセージを表示する
+ */
+function backConfirmMessage(sessionId, action, message) {
+	if (confirm(message)) {
+		if (!isSubmit) {
+			window.location=action + ";jsessionid=" + sessionId + "?re=";
+		}
+	}
+}
+
+/**
+ * PDFファイル名称が設定されていた場合、別ウィンドウでPDFファイルを表示する。
+ */
+function finishLoad() {
+
+	loginErrorCount = 3;
+	errorCount = 0;
+  // グインエラー回数＞規定の回数場合、グインエラー回数初期化
+  
+	// ログインエラー回数が規定の回数を上回るとウィンドウを閉じる
+	if (loginErrorCount < errorCount) {
+		window.close();
+	}
+
+	isLoad = true;
+
+	if (pdfName != "") {
+		var pdfWin = window.open(pdfName, 'PDF', "resizable=yes, scrollbars=yes");
+		isPdfSubmit = false;
+		isSubmit = false;
+		pdfWin.focus();
+		pdfName = "";
+	}
+
+	lastSec = 5400;
+
+	tID = setInterval('graphicalTimer()',1000);
+
+	// 時
+	var hour = 0;
+	// 分
+	var minu = 0;
+	// 秒
+	var seco = 0;
+
+	// 残り時間が3600秒以上ある場合は時間を求める
+	if (lastSec > 3599) {
+		hour = parseInt(lastSec / 3600);
+	}
+
+	// 分を求める
+	if (lastSec > 3599) {
+		minu = parseInt((lastSec % 3600) / 60);
+	} else {
+		minu = parseInt(lastSec / 60);
+	}
+
+	// 秒を求める
+	if (lastSec == 60) {
+		minu = 1;
+	} else {
+		seco = (lastSec % 3600) % 60;
+	}
+
+	// 画面表示用変数
+	var disp;
+	var dHour;
+	var dMinu;
+	var dSeco;
+	var iDisp;
+	var iHour;
+	var iMinu;
+	var iSeco;
+
+	if (hour < 10) {
+	    hour = "0" + hour;
+	}
+	if (minu < 10) {
+		minu = "0" + minu;
+	}
+	if (seco < 10) {
+		seco = "0" + seco;
+	}
+
+	if (hour == "00") {
+		dHour = "";
+		iHour = "";
+	} else {
+		dHour = hour + ":";
+		iHour = hour + "時間";
+	}
+	if (hour == "" && (minu == "00")) {
+		dMinu = "";
+		iMinu = "";
+	} else {
+		dMinu = minu + ":";
+		iMinu = minu + "分";
+	}
+	dSeco = seco + "";
+	iSeco = seco + "秒";
+	disp = dHour + dMinu + dSeco;
+	iDisp = iHour + iMinu + iSeco;
+
+	// NetScape、MACのSafari
+	if (navigator.appName == "Netscape") {
+		//document.getElementById("timerDisplay").innerHTML = lastSec;
+		// ▼ 02:CSTM-AIT-KM-XXX MODS
+		//document.getElementById("timerDisplay").innerHTML = disp;
+		//document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		if(document.getElementById("timerDisplay")!=null){
+			document.getElementById("timerDisplay").innerHTML = disp;
+			document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		}
+		// ▲ 02:CSTM-AIT-KM-XXX MODE
+		// WindowsとMACのIE
+	} else if (navigator.appName == "Microsoft Internet Explorer") {
+		//timerDisplay.innerText = lastSec;
+		timerDisplay.innerText = disp;
+		iTimerDisplay.innerText = "ログアウトまで" + iDisp;
+	// その他
+	} else {
+		// 対象外
+	}
+}
+
+/**
+ * タイムアウトまでの時間を表示する。
+ */
+// 現在のパスを取得する
+nowLocation = new String(parent.location);
+
+function graphicalTimer(){
+	lastSec--;
+
+	// 時
+	var hour = 0;
+	// 分
+	var minu = 0;
+	// 秒
+	var seco = 0;
+
+	// 残り時間が3600秒以上ある場合は時間を求める
+	if (lastSec > 3599) {
+		hour = parseInt(lastSec / 3600);
+	}
+
+	// 分を求める
+	if (lastSec > 3599) {
+		minu = parseInt((lastSec % 3600) / 60);
+	} else {
+		minu = parseInt(lastSec / 60);
+	}
+
+	// 秒を求める
+	if (lastSec == 60) {
+		minu = 1;
+	} else {
+		seco = (lastSec % 3600) % 60;
+	}
+
+	// 画面表示用変数
+	var disp;
+	var dHour;
+	var dMinu;
+	var dSeco;
+	var iDisp;
+	var iHour;
+	var iMinu;
+	var iSeco;
+
+	if (hour < 10) {
+	    hour = "0" + hour;
+	}
+	if (minu < 10) {
+		minu = "0" + minu;
+	}
+	if (seco < 10) {
+		seco = "0" + seco;
+	}
+
+	if (hour == "00") {
+		dHour = "";
+		iHour = "";
+	} else {
+		dHour = hour + ":";
+		iHour = hour + "時間";
+	}
+	if (hour == "" && (minu == "00")) {
+		dMinu = "";
+		iMinu = "";
+	} else {
+		dMinu = minu + ":";
+		iMinu = minu + "分";
+	}
+	dSeco = seco + "";
+	iSeco = seco + "秒";
+	disp = dHour + dMinu + dSeco;
+	iDisp = iHour + iMinu + iSeco;
+
+	// NetScape、MACのSafari
+	if (navigator.appName == "Netscape") {
+		// ▼ 02:CSTM-AIT-KM-XXX MODS
+		//document.getElementById("timerDisplay").innerHTML = disp;
+		//document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		if(document.getElementById("timerDisplay")!=null){
+			document.getElementById("timerDisplay").innerHTML = disp;
+			document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		}
+		// ▲ 02:CSTM-AIT-KM-XXX MODE
+	// WindowsとMACのIE
+	} else if (navigator.appName == "Microsoft Internet Explorer") {
+		timerDisplay.innerText = disp;
+		iTimerDisplay.innerText = "ログアウトまで" + iDisp;
+	} else {
+		// 対象外
+	}
+	if (nowLocation.indexOf("/UI/jsp/login") < 0) {
+		if(lastSec == 0){
+			clearInterval(tID);
+
+			// 確認メッセージで「OK」を選択した場合、各ユーザのログイン画面へ遷移する
+			if (confirm('タイムアウトが発生しましたので、ログイン画面に戻ります。')) {
+
+			
+					window.close();
+            
+			}
+		}
+	}
+}
+
+/**
+ * window.onloadに関数を追加する
+ */
+function addLoadEvent(func) {
+    var oldonload = window.onload;
+    if (typeof window.onload != 'function') {
+        window.onload = func;
+    }
+    else {
+        window.onload = function() {
+            oldonload();
+            func();
+        }
+    }
+}
+
+addLoadEvent(finishLoad);
+
+
+/**
+ * ヘルプウィンドウを開く
+ */
+function showHelpWindow(target, mapId) {
+
+  var url = "";
+
+  if (target == "student") {
+	url = '/UI/html/help/student/LiveCampusWebHelpStudent.htm'
+  } else if (target == "teacher") {
+	url = '/UI/html/help/teacher/LiveCampusWebHelpTeacher.htm'
+  } else if (target == "staff") {
+	url = '/UI/html/help/staff/LiveCampusWebHelpStaff.htm'
+  }
+
+  if (navigator.appVersion.indexOf("Safari") != -1 ) {
+	window.open(url, 'LiveCampusWebHelp', 'toolbar=no,location=no,directory=no,status=yes,scrollbars=yes,resizable=yes,width=900,height=700')
+  } else {
+	RH_ShowHelp(0, url + '>LcHelpWindow', HH_HELP_CONTEXT, mapId);
+  }
+
+}
+
+/**
+ * ログアウト時に確認メッセージを表示する（ポータル連携時）
+ */
+function logoutMessage(message, session) {
+	// 確認メッセージで「OK」を選択した場合、各ユーザのログイン画面へ遷移する
+	if (confirm(message)) {
+		location.href = "/kyoumu/logout.do;jsessionid=" + session;
+	}
+}
+
+/**
+* 子画面を閉じる
+*/
+function subWinClose() {
+	if (childWindow != null && !childWindow.closed) {
+		childWindow.close();
+	}
+}
+
+/**
+* ＨＴＭＬ特殊文字からの変換
+*/
+function strReplace(str) {
+	str = str.replace('&quot;', '\"', 'g');
+	str = str.replace('&#39;', '\'', 'g');
+	return str;
+}
+//-->
+</script>
+
+
+
+<script language="javascript">
+/**
+ * ファイルダウンロード処理
+ */
+ var fileWindowOpen = false;
+ var fileWindow;
+function uploadFileOutput(sessionID, index, status) {
+	if (status == "download") {
+		var uri = window.location.href;
+ 		var findIndex = uri.indexOf('&statusType=',0);
+ 		
+  		if (findIndex != -1) {
+			uri = uri.substring(0,findIndex);
+ 	 	}
+
+ 		window.location.href = uri + '&statusType=' + status + '&selectIndex=' + index;
+	}
+	if (!fileWindowOpen) {
+		fileWindowOpen = true;
+		fileWindow = window.open(url, 'fileWindow', 'width=1000,height=600, scrollbars=yes, resizable=yes');
+		fileWindow.focus();
+	} else {
+		if(navigator.userAgent.indexOf('Safari') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			fileWindow = window.open(url, 'fileWindow', 'width=1000,height=600, scrollbars=yes, resizable=yes');
+			fileWindow.focus();
+		// Safari以外
+		} else {
+			if (fileWindow.closed) {
+				fileWindow = window.open(url, 'fileWindow', 'width=1000,height=600, scrollbars=yes, resizable=yes');
+				fileWindow.focus();
+			} else {
+				alert("添付ファイルウィンドウが既に開いています。");
+			}
+		}
+	}
+}
+</script>
+
+<html lang="ja-JP">
+<head>
+  <title>
+    シラバス参照
+  </title>
+	<link rel="stylesheet" href="/UI/css/common/text.css" type="text/css">
+	<link rel="stylesheet" href="/UI/css/common/syllabus.css" type="text/css">
+    
+	<link rel="stylesheet" href="/UI/css/common/print.css" type="text/css">
+    
+  <META http-equiv=Pragma content=no-cache>
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" onunload="subWinClose()">
+<script language="javascript">
+<!--
+  function syllabusChildOpen(sessionID, teacherCD) {
+    var url = "/syllabus2/syllabusTeacherDetail.do;jsessionid=" + sessionID + "?teacherCD=" + teacherCD;
+    subWindow = window.open(url, 'subWindow', "width=680, height=400, scrollbars=yes, resizable=yes, status=yes");
+    subWindow.focus();
+  }
+//-->
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<div id="notPrintHead">
+
+
+
+
+
+
+
+
+  
+<script language="javascript">
+<!--
+/*
+ * ファイル名   linkControl.js
+ * 開発システム LiveCampus Web
+ * 著作権       Copyright(c)2003 NTTDATA KYUSHU
+ * 会社名       (株)NTTデータ九州
+ * $Id: js_linkControl.jsp,v 1.1 2013/11/05 02:11:03 ishidakk Exp $
+ * 履歴
+ * 2003/04/05 tanakakz 初版
+ */
+
+/**
+ * 画面遷移
+ *
+ * @param s 遷移先URL
+ */
+  function locatePageTo(s) {
+    parent.location.href = s;
+  }
+
+/**
+ * ポップアップ画面の表示
+ *
+ * @param s 遷移先URL
+ * @param n ポップアップ画面識別名称
+ * @param w ポップアップ画面横幅
+ * @param h ポップアップ画面高さ
+ */
+  function popupPageTo(s, n, w, h) {
+    popupWindow = window.open(s, n, 'width=' + w + ',height=' + h + ',scrollbars=yes');
+    popupWindow.focus();
+  }
+
+/**
+ * 背景色の変更
+ *
+ * @param t 変更対象エレメント
+ * @param c 変更後の背景色
+ */
+  function setBgColor(t, c) {
+    t.style.backgroundColor = c;
+  }
+//-->
+</script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+<script language="javascript">
+<!--
+// eHelpｮ Corporation
+// Copyrightｩ 1998-2002 eHelpｮ Corporation.All rights reserved.
+// RoboHelp_CSH.js
+// The Helper function for WebHelp Context Sensitive Help
+
+//     Syntax:
+//     function RH_ShowHelp(hParent, a_pszHelpFile, uCommand, dwData)
+//
+//     hParent
+//          Reserved - Use 0
+//   
+//     pszHelpFile
+//          WebHelp: 
+//               Path to help system start page ("http://www.myurl.com/help/help.htm" or "/help/help.htm")
+//               For custom windows (defined in Help project), add ">" followed by the window name ("/help/help.htm>mywin")
+//
+//          WebHelp Enterprise: 
+//               Path to RoboEngine server ("http://RoboEngine/roboapi.asp")
+//               If automatic merging is turned off in RoboEngine Configuration Manager, specify the project name in the URL ("http://RoboEngine/roboapi.asp?project=myproject")
+//               For custom windows (defined in Help project), add ">" followed by the window name ("http://RoboEngine/roboapi.asp>mywindow")
+//
+//     uCommand
+//          Command to display help. One of the following:
+//                    HH_HELP_CONTEXT     // Displays the topic associated with the Map ID sent in dwData
+//											if 0, then default topic is displayed.				
+//               The following display the default topic and the Search, Index, or TOC pane. 
+//               Note: The pane displayed in WebHelp Enterprise will always be the window's default pane.
+//                    HH_DISPLAY_SEARCH 
+//                    HH_DISPLAY_INDEX
+//                    HH_DISPLAY_TOC
+//
+//     dwData
+//          Map ID associated with the topic to open (if using HH_HELP_CONTEXT), otherwise 0
+//
+//     Examples:
+//     <p>Click for <A HREF='javascript:RH_ShowHelp(0, "help/help.htm", 0, 10)'>Help</A> (map number 10)</p>
+//     <p>Click for <A HREF='javascript:RH_ShowHelp(0, "help/help.htm>mywindow", 0, 100)'>Help in custom window (map number 100)</A></p>
+
+
+var gbNav6=false;
+var gbNav61=false;
+var gbNav4=false;
+var gbIE4=false;
+var gbIE=false;
+var gbIE5=false;
+var gbIE55=false;
+
+var gAgent=navigator.userAgent.toLowerCase();
+var gbMac=(gAgent.indexOf("mac")!=-1);
+var gbSunOS=(gAgent.indexOf("sunos")!=-1);
+var gbOpera=(gAgent.indexOf("opera")!=-1);
+
+var HH_DISPLAY_TOPIC = 0;
+var HH_DISPLAY_TOC = 1;
+var HH_DISPLAY_INDEX = 2;
+var HH_DISPLAY_SEARCH = 3;
+var HH_HELP_CONTEXT = 15;
+
+var gVersion=navigator.appVersion.toLowerCase();
+
+var gnVerMajor=parseInt(gVersion);
+var gnVerMinor=parseFloat(gVersion);
+
+gbIE=(navigator.appName.indexOf("Microsoft")!=-1);
+if(gnVerMajor>=4)
+{
+	if(navigator.appName=="Netscape")
+	{
+		gbNav4=true;
+		if(gnVerMajor>=5)
+			gbNav6=true;
+	}
+	gbIE4=(navigator.appName.indexOf("Microsoft")!=-1);
+}
+if(gbNav6)
+{
+	document.gnPageWidth=innerWidth;
+	document.gnPageHeight=innerHeight;
+	var nPos=gAgent.indexOf("netscape");
+	if(nPos!=-1)
+	{
+		var nVersion=parseFloat(gAgent.substring(nPos+10));
+		if(nVersion>=6.1)
+			gbNav61=true;
+	}
+}else if(gbIE4)
+{
+	var nPos=gAgent.indexOf("msie");
+	if(nPos!=-1)
+	{
+		var nVersion=parseFloat(gAgent.substring(nPos+5));
+		if(nVersion>=5)
+			gbIE5=true;
+		if(nVersion>=5.5)
+			gbIE55=true;
+	}
+}
+
+function RH_ShowHelp(hParent, a_pszHelpFile, uCommand, dwData)
+{
+	// this function only support WebHelp
+	var strHelpPath = a_pszHelpFile;
+	var strWnd = "";
+	var nPos = a_pszHelpFile.indexOf(">");
+	if (nPos != -1)
+	{
+		strHelpPath = a_pszHelpFile.substring(0, nPos);
+		strWnd = a_pszHelpFile.substring(nPos+1); 
+	}
+	if (isServerBased(strHelpPath))
+		RH_ShowWebHelp_Server(hParent, strHelpPath, strWnd, uCommand, dwData);
+	else
+		RH_ShowWebHelp(hParent, strHelpPath, strWnd, uCommand, dwData);
+}
+
+function RH_ShowWebHelp_Server(hParent, strHelpPath, strWnd, uCommand, dwData)
+{
+	// hParent never used.
+	ShowWebHelp_Server(strHelpPath, strWnd, uCommand, dwData);
+}
+
+function RH_ShowWebHelp(hParent, strHelpPath, strWnd, uCommand, dwData)
+{
+	// hParent never used.
+	ShowWebHelp(strHelpPath, strWnd, uCommand, dwData);
+}
+
+
+function ShowWebHelp_Server(strHelpPath, strWnd, uCommand, nMapId)
+{
+	var a_pszHelpFile = "";
+	if (uCommand == HH_HELP_CONTEXT)
+	{
+		if (strHelpPath.indexOf("?") == -1)
+			a_pszHelpFile = strHelpPath + "?ctxid=" + nMapId;
+		else
+			a_pszHelpFile = strHelpPath + "&ctxid=" + nMapId;
+	}
+	else
+	{
+		if (strHelpPath.indexOf("?") == -1)
+			a_pszHelpFile = strHelpPath + "?ctxid=0";
+		else
+			a_pszHelpFile = strHelpPath + "&ctxid=0";
+	}
+
+	if (strWnd)
+		a_pszHelpFile += ">" + strWnd;
+
+	if (gbIE4)
+	{
+		a_pszHelpFile += "&cmd=newwnd&rtype=iefrm";
+		loadData(a_pszHelpFile);
+	}
+	else if (gbNav4)
+	{
+		a_pszHelpFile += "&cmd=newwnd&rtype=nswnd";
+		var sParam = "left="+screen.width+",top="+screen.height+",width=100,height=100";
+		window.open(a_pszHelpFile, "__webCshStub", sParam);
+	}
+	else
+	{
+		var sParam = "left="+screen.width+",top="+screen.height+",width=100,height=100";
+		if (gbIE5)
+			window.open("about:blank", "__webCshStub", sParam);
+		window.open(a_pszHelpFile, "__webCshStub");
+	}
+}
+
+
+function ShowWebHelp(strHelpPath, strWnd, uCommand, nMapId)
+{
+	var a_pszHelpFile = "";
+	if (uCommand == HH_DISPLAY_TOPIC)
+	{
+		a_pszHelpFile = strHelpPath + "#<id=0";
+	}
+	if (uCommand == HH_HELP_CONTEXT)
+	{
+		a_pszHelpFile = strHelpPath + "#<id=" + nMapId;
+	}
+	else if (uCommand == HH_DISPLAY_INDEX)
+	{
+		a_pszHelpFile = strHelpPath + "#<cmd=idx";
+	}
+	else if (uCommand == HH_DISPLAY_SEARCH)
+	{
+		a_pszHelpFile = strHelpPath + "#<cmd=fts";
+	}
+	else if (uCommand == HH_DISPLAY_TOC)
+	{
+		a_pszHelpFile = strHelpPath + "#<cmd=toc";
+	}
+	if (strWnd)
+		a_pszHelpFile += ">>wnd=" + strWnd;
+
+	if (a_pszHelpFile)
+	{
+		if (gbIE4)
+			loadData(a_pszHelpFile);
+		else if (gbNav4)
+		{
+			var sParam = "left="+screen.width+",top="+screen.height+",width=100,height=100";
+			window.open(a_pszHelpFile, "__webCshStub", sParam);
+		}
+		else
+		{
+			var sParam = "left="+screen.width+",top="+screen.height+",width=100,height=100";
+			if (gbIE5)
+				window.open("about:blank", "__webCshStub", sParam);
+			window.open(a_pszHelpFile, "__webCshStub");
+		}
+	}
+}
+
+function isServerBased(a_pszHelpFile)
+{
+	if (a_pszHelpFile.length > 0)
+	{
+		var nPos = a_pszHelpFile.lastIndexOf('.');
+		if (nPos != -1 && a_pszHelpFile.length >= nPos + 4)
+		{
+			var sExt = a_pszHelpFile.substring(nPos, nPos + 4);
+			if (sExt.toLowerCase() == ".htm")
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+function getElement(sID)
+{
+	if(document.getElementById)
+		return document.getElementById(sID);
+	else if(document.all)
+		return document.all(sID);
+	return null;
+}
+
+function loadData(sFileName)
+{
+	if(!getElement("dataDiv"))
+	{
+		if(!insertDataDiv())
+		{
+			gsFileName=sFileName;
+			return;
+		}
+	}
+	var sHTML="";
+	if(gbMac)
+		sHTML+="<iframe name=\"__WebHelpCshStub\" src=\""+sFileName+"\"></iframe>";
+	else
+		sHTML+="<iframe name=\"__WebHelpCshStub\" style=\"visibility:hidden;width:0;height:0\" src=\""+sFileName+"\"></iframe>";
+	
+	var oDivCon=getElement("dataDiv");
+	if(oDivCon)
+	{
+		if(gbNav6)
+		{
+			if(oDivCon.getElementsByTagName&&oDivCon.getElementsByTagName("iFrame").length>0)
+			{
+				oDivCon.getElementsByTagName("iFrame")[0].src=sFileName;
+			}
+			else
+				oDivCon.innerHTML=sHTML;
+		}
+		else
+			oDivCon.innerHTML=sHTML;
+	}
+}
+
+function insertDataDiv()
+{
+	var sHTML="";
+	if(gbMac)
+		sHTML+="<div id=dataDiv style=\"display:none;\"></div>";
+	else
+		sHTML+="<div id=dataDiv style=\"visibility:hidden\"></div>";
+
+	document.body.insertAdjacentHTML("beforeEnd",sHTML);
+	return true;
+}
+//-->
+</script>
+
+
+<script language="javascript">
+<!--
+/**
+ * キーボード、マウスによる入力での画面遷移を制御するためのjavascript
+ */
+ 
+/** キーコードを判断するためのフラグ */
+document.onkeydown = keyhandler;
+
+/** マウスクリックを検出し右クリックを禁止する */
+document.oncontextmenu = onContext;
+/** マウスホイールが使用されたかどうかを判定する */
+document.onmousewheel = wheel;
+
+var submitFlag = false;
+
+/**
+ * マウスホイールによる入力時のイベント処理を行う
+ */
+function wheel() {
+	
+	// ブラウザの種別を取得
+	var browser = navigator.appName;
+	
+	// ブラウザがInternet Explorer の場合
+	if (browser.indexOf("Microsoft") >= 0) {
+		// シフトキーと同時押しの時は制御を行う
+		if (window.event.shiftKey) {
+			window.event.cancelBubble = true;
+			window.event.returnValue = false;
+		}
+	}
+	
+	// ネットスケープの場合は shift+ホイールマウス で遷移しないため対応なし
+	
+}
+
+/**
+ * キーボードよる入力時のイベント処理を行う
+ */
+function keyhandler(e) {
+
+	// ブラウザの種別を取得
+	// ▼xDTS-1396 MODS
+//	var browser = navigator.appName;
+	var browser = navigator.userAgent;
+	// ▲xDTS-1396 MODE
+	// ▼xDTS-1396 ADDS
+	var platform = navigator.platform;
+	// ▲xDTS-1396 ADDE
+
+	// ブラウザがInternet Explorer の場合
+	// ####################### InternetExplorer ################################
+	// ▼xDTS-1396 MODS
+//	if (browser.indexOf("Microsoft") >= 0) {
+	if (browser.indexOf("MSIE") >= 0) {
+	// ▲xDTS-1396 MODE
+		// 押されたキーがenter(13)の時
+		if (window.event.keyCode == 13){
+			// 発生したイベントを無効とする（サブミットの制御）
+			// ▼xDTS-1396 MODS
+//			if(event.srcElement.type == "text" || event.srcElement.type == "file" || event.srcElement.type == null || event.srcElement.type == "checkbox"){
+			if (event.srcElement.type == "text" || event.srcElement.type == "file" || event.srcElement.type == null ||
+				event.srcElement.type == "checkbox" || event.srcElement.type == "radio" || event.srcElement.type == "select-one"){
+			// ▲xDTS-1396 MODE
+				window.event.returnValue = false;
+			}
+		}
+		// 押されたキーがF5(116)の時
+		if (window.event.keyCode == 116){
+			// キーコードを8に書き換え入力を無効とする
+			window.event.keyCode = 8;
+			window.event.cancelBubble = true;
+			window.event.returnValue = false;
+			return false;
+		}
+
+		// ▼xDTS-1396 ADDS
+		// 押されたキーがr(82)の時
+		if (window.event.keyCode == 82){
+			// Ctrlキーが押されているかチェックを行う
+			if (window.event.ctrlKey){
+				window.event.cancelBubble = true;
+				window.event.returnValue = false;
+				return false;
+			}
+		}
+		// ▲xDTS-1396 ADDE
+
+		// 押されたキーが左(37)、右(39)の時
+		if (window.event.keyCode == 37 || window.event.keyCode == 39){
+			// Altキーが押されているかチェックを行う
+			if (window.event.altKey){
+				// ▼xDTS-1396 MODS
+//				if (window.event.keyCode == 37) {
+//					alert('キーボードによる戻る処理は出来ません。');
+//				} else {
+//					alert('キーボードによる進む処理は出来ません。');
+//				}
+				// ▲xDTS-1396 MODE
+				// 押されていれば入力を無効にする
+				window.event.cancelBubble = true;
+				window.event.returnValue = false;
+				return false;
+			}
+		}
+		
+		// 押されたキーがBackspace(8)の時
+		if (window.event.keyCode == 8) {
+			if(event.srcElement.type != "text" && event.srcElement.type != "textarea" && event.srcElement.type != "password" && event.srcElement.type != "file"){
+				// イベントの発生元がテキストフィールドでないときはバックスペース
+				// 不可にする
+				window.event.cancelBubble = true;
+				window.event.returnValue = false;
+				return false;
+			} else if(event.srcElement.readOnly) {
+				// テキストフィールドで読み取り専用の場合もバックスペース不可にする
+				window.event.cancelBubble = true;
+				window.event.returnValue = false;
+				return false;
+			}
+		}
+
+	// ▼xDTS-1396 ADDS
+	// ####################### NetScape ################################
+	} else if (browser.indexOf("Netscape") >= 0) {
+		// Netscapeではonkeydownでイベントを無効にできないのでonkeypressも取得する
+		document.onkeypress = keyhandler;
+
+		// 押されたキーがenter(13)の時
+		if (e.keyCode == 13) {
+			// 発生したイベントを無効とする（サブミットの制御）
+			if (e.target.type == "text" || e.target.type == "file" || e.target.type == null ||
+				e.target.type == "checkbox" || e.target.type == "radio" || e.target.type == "select-one") {
+				// 入力を無効にする
+				return false;
+			}
+		}
+		
+		// 押されたキーがF5(116)の時
+		if (e.keyCode == 116){
+			// 入力を無効にする
+			return false;
+		}
+
+		// 押されたキーがr(114)の時
+		// ※e.keyCodeでは'0'となってしまうためe.whichで判別
+		if (e.which == 114) {
+			// Ctrlキーが押されているかチェックを行う
+			if (e.ctrlKey){
+				// 入力を無効にする
+				return false;
+			}
+		}
+
+		if (e.keyCode == 37 || e.keyCode == 39){
+			// Altキーが押されているかチェックを行う
+			if (e.altKey){
+				// 入力を無効にする
+				return false;
+			}
+		}
+
+		// 押されたキーがBackspace(8)の時
+		if (e.keyCode == 8) {
+			if(e.target.type != "text" && e.target.type != "textarea" && e.target.type != "password" && e.target.type != "file"){
+				// イベントの発生元がテキストフィールドでないときはバックスペース
+				// 不可にする
+				// 入力を無効にする
+				return false;
+			}
+		}
+	// ▲xDTS-1396 ADDE
+
+	// ####################### Firefox & Safari ################################
+	} else {
+		// 押されたキーがenter(13)の時
+		// ▼xDTS-1396 MODS
+//		if (e.which == 13) {
+		if (e.keyCode == 13) {
+		// ▲xDTS-1396 MODE
+
+			// 発生したイベントを無効とする（サブミットの制御）
+			// ▼xDTS-1396 MODS
+//			if (e.target.type == "text" || e.target.type == "file" || e.target.type == null || e.target.type == "checkbox") {
+			if (e.target.type == "text" || e.target.type == "file" || e.target.type == null ||
+				e.target.type == "checkbox" || e.target.type == "radio" || e.target.type == "select-one") {
+			// ▲xDTS-1396 MODE
+				// 入力を無効にする
+				submitFlag = false;
+				return false;
+			}
+		}
+		
+		// 押されたキーがF5(116)の時
+		// ▼xDTS-1396 MODS
+//		if (e.which == 116){
+		if (e.keyCode == 116){
+		// ▲xDTS-1396 MODE
+			// キーコードを8に書き換え入力を無効とする
+			// ▼xDTS-1396 MODS
+//			e.which = 8;
+			// ▲xDTS-1396 MODE
+			// 入力を無効にする
+			return false;
+		}
+		
+// ▼xDTS-1135 MODS
+		// 押されたキーが左(37)、右(39)の時
+//		if (e.which == 37 || e.which == 39){
+//			// ここでイベントをキャンセルすればよいがネットスケープでは未実装
+//			return false;
+//		}
+// ▲xDTS-1135 MODE
+
+		// ▼xDTS-1396 ADDS
+		// OSがMacの場合
+		if (platform.indexOf("Mac") >= 0) {
+			// 押されたキーがr(82)の時
+			if (e.keyCode == 82){
+				// コマンドキーが押されているかチェックを行う
+				if (e.metaKey){
+					// 入力を無効にする
+					return false;
+				}
+			}
+		} else {
+			// 押されたキーがr(82)の時
+			if (e.keyCode == 82){
+				// Ctrlキーが押されているかチェックを行う
+				if (e.ctrlKey){
+					// 入力を無効にする
+					return false;
+				}
+			}
+		}
+		// ▲xDTS-1396 ADDE
+
+		// 押されたキーが左(37)、右(39)の時
+		// ▼xDTS-1396 MODS
+//		if (e.which == 37 || e.which == 39){
+		if (e.keyCode == 37 || e.keyCode == 39){
+		// ▲xDTS-1396 MODE
+			// Altキーが押されているかチェックを行う
+			if (e.altKey){
+				// ▼xDTS-1396 MODS
+//				if (e.which == 37) {
+//					alert('キーボードによる戻る処理は出来ません。');
+//				} else {
+//					alert('キーボードによる進む処理は出来ません。');
+//				}
+				// ▲xDTS-1396 MODE
+				// 入力を無効にする
+				return false;
+			}
+		}
+		// ▲xDTS-1396 ADDE
+
+		// 押されたキーがBackspace(8)の時
+//		if (e.which == 8) {
+		if (e.keyCode == 8) {
+			if(e.target.type != "text" && e.target.type != "textarea" && e.target.type != "password" && e.target.type != "file"){
+				// イベントの発生元がテキストフィールドでないときはバックスペース
+				// 不可にする
+				// 入力を無効にする
+				return false;
+			}
+		}
+	}
+}
+
+/**
+ * 右クリック時のメニューを表示しないようにする
+ */
+function onContext(e){
+	// ブラウザの種別を取得
+	var browser = navigator.appName;
+	// ブラウザがInternet Explorer の場合
+	// ####################### InternetExplorer ################################
+	if (browser.indexOf("Microsoft") >= 0) {
+		// s40201とg40201のダウンロードリンクの時のみ右クリックを可能とする
+		// 呼ばれているjavascript名で判断
+		var element = event.srcElement.name;
+		if (element != null) {
+			if (element.indexOf("downLoadFile") != -1) {
+				return true;
+			}
+		}
+		
+		// 右クリックが押下されたときのオブジェクトの種別により判断を行う
+		// text,textarea,password,file 内のときは右クリックを許可する
+		if(event.srcElement.type != "text" && event.srcElement.type != "textarea" && event.srcElement.type != "password" && event.srcElement.type != "file"){
+			return false;
+		} else{
+			return true;
+		}
+		// ブラウザがNetScapeであるとき
+		// ####################### NetScape ################################
+	} else {
+		// 右クリックが押下されたときのオブジェクトの種別により判断を行う
+		// text,textarea,password,file 内のときは右クリックを許可する
+		if (e.target.type != "text" && e.target.type != "textarea" && e.target.type != "password" && e.target.type != "file") {
+			return false;
+		} else{
+			return true;
+		}
+	}
+}
+//-->
+</script>
+
+
+<script language="javascript">
+<!--
+/*
+ * 印刷のダイアログを表示する前に確認ダイアログを表示する
+ */
+function printMessage() {
+	if (confirm("当印刷機能はブラウザの印刷機能です。よろしければ「ＯＫ」をクリックしてください。\n※Mac端末ではダイアログが表示されない場合があるので、ツールバーより印刷を行ってください。")) {
+		javascript:window.print();
+	}
+}
+//-->
+</script>
+
+
+
+
+<script language="javascript">
+<!--
+/**
+ * 多重送信制御を行う。
+ */
+isSubmit = false;
+isChildOpen = false;
+isPdfSubmit = false;
+isCsvSubmit = false;
+isUploadSubmit = false;
+isLoad = false;
+var pdfName = '';
+
+var childWindow; // 子ダイアログ用
+var subWindow; // 子ダイアログ用
+
+function checkSubmit() {
+	if (submitFlag == false) {
+		return false;
+	}
+}
+
+function dbClick() {
+	return dbPrintClick('submit');
+}
+
+function dbClickWithAlert() {
+	submitFlag = true;
+	// 画面が完全にロードし切れていない場合、または既にボタン操作が行われている場合
+	if(!isLoad || isSubmit) {
+	    alert('現在処理中です。しばらくお待ちください。');
+		return false;
+	}
+	isSubmit = true;
+	return true;
+}
+
+function dbChildOpen(url, width, height) {
+	submitFlag = true;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+		childWindow.focus();
+	} else {
+		if(navigator.userAgent.indexOf('Safari') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+			childWindow.focus();
+		// Safari以外
+		} else {
+			if (childWindow.closed) {
+				childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+				childWindow.focus();
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+}
+function dbChildOpenTsuchisho(url, width, height) {
+	submitFlag = true;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		// ▼ 01:CSTM-NCU-01 MODS
+		// 成績通知書の住所選択ダイアログ除去
+		//childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+		childWindow = window.open(url, 'subWindow', 'scrollbars=yes, resizable=yes, status=yes');
+		// ▲ 01:CSTM-NCU-01 MODE
+		childWindow.focus();
+	} else {
+		// Safari1.0対応
+		if(navigator.userAgent.indexOf('Safari/85') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			// ▼ 01:CSTM-NCU-01 MODS
+			// 成績通知書の住所選択ダイアログ除去
+			//childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+			childWindow = window.open(url, 'subWindow', 'scrollbars=yes, resizable=yes');
+			// ▲ 01:CSTM-NCU-01 MODE
+			childWindow.focus();
+		// Safari1.0以外
+		} else {
+			if (childWindow.closed) {
+				try {
+				// ▼ 01:CSTM-NCU-01 MODS
+				// 成績通知書の住所選択ダイアログ除去
+				//childWindow = window.open(url, 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+				childWindow = window.open(url, 'subWindow', 'scrollbars=yes, resizable=yes');
+				// ▲ 01:CSTM-NCU-01 MODE
+				childWindow.focus();
+				} catch (e) {
+				}
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+}
+/**
+ * 子ウインドウを開いた後、そのウインドウをターゲットとしてフォームを送信する
+ */
+function dbChildOpenAndSubmitForm(form, url, width, height) {
+	submitFlag = true;
+	var doOpen = false;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		doOpen = true;
+	} else {
+		// Safari対応
+		if(navigator.userAgent.indexOf('Safari') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			doOpen = true;
+		// Safari1.0以外
+		} else {
+			if (childWindow.closed) {
+				doOpen = true;
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+	if (doOpen) {
+        var actionBackup = form.action;
+        childWindow = window.open("about:blank", 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+        // 子画面をターゲットとしてサブミット処理実行
+        form.action = url;
+        form.target = 'subWindow';
+        form.submit();
+        form.action = actionBackup;
+        form.target = "";
+
+        childWindow.focus();
+	}
+}
+
+function dbLinkClick(arg) {
+
+	submitFlag = true;
+	// 画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(isLoad) {
+		// 既にボタン操作が行われている場合、submit処理を行わせない
+		if (!isSubmit) {
+			isSubmit = true;
+    		document.location.href = arg;
+		}
+	}
+}
+
+function dbCsvClick() {
+	submitFlag = true;
+	// ファイル出力ボタンが押された場合
+	if (isCsvSubmit) {
+		if (confirm("再度、ファイル出力処理を行いますか？")) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		isCsvSubmit = true;
+		return true;
+	}
+}
+
+function dbPrintClick_ServerDL(arg) {
+
+	submitFlag = true;
+	// 印刷ボタンの２度押しにはアラートメッセージを表示する
+	if (isPdfSubmit) {
+		alert("現在印刷処理中です。しばらくお待ちください。");
+		return false;
+	}
+
+	// 印刷ボタンが押された場合、印刷実行中フラグを「true」に設定する
+	if (arg == 'print') {
+		isPdfSubmit = true;
+	}
+
+	// 画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(!isLoad) {
+		return false;
+	}
+
+	// 既にボタン操作が行われている場合、submit処理を行わせない
+	if (isSubmit) {
+		return false;
+	}
+	isSubmit = true;
+	return true;
+}
+
+function dbPrintClick(arg, elm, buttonName, buttonValue) {
+	submitFlag = true;
+	// 印刷ボタンの２度押しにはアラートメッセージを表示する
+	if (isPdfSubmit) {
+		alert("現在印刷処理中です。しばらくお待ちください。");
+		return false;
+	}
+
+	// 印刷ボタンが押された場合、印刷実行中フラグを「true」に設定する
+	if (arg == 'print') {
+		if (arguments.length == '1') {
+			return dbPrintClick_ServerDL(arg);
+		} else {
+			// 帳票イメージがjsp実行結果の代わりに返却されるようになるため，
+			// PDF表示用ウインドウを開き，このウインドウをターゲットにしてフォームを送信する
+			if (elm != null) {
+				if (!isLoad || isSubmit) {
+					return false;
+				}
+
+				var form = elm.form;
+				return openSubWindowAndSubmitForm(form, buttonName, buttonValue);
+			}
+		}
+
+		isPdfSubmit = true;
+	}
+
+	// 画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(!isLoad) {
+		return false;
+	}
+
+	// 既にボタン操作が行われている場合、submit処理を行わせない
+	if (isSubmit) {
+		return false;
+	}
+	isSubmit = true;
+
+	return true;
+}
+
+/**
+ * 印刷処理を実行する
+ */
+function dbLinkPrintClick(form, buttonName, buttonValue) {
+	if (!isLoad || isSubmit) {
+		return false;
+	}
+	return openSubWindowAndSubmitForm(form, buttonName, buttonValue);
+}
+
+/**
+ * ファイル取込処理を実行する
+ */
+function dbUploadClick() {
+	submitFlag = true;
+
+	// 印刷ボタンの２度押しにはアラートメッセージを表示する
+	if (isUploadSubmit) {
+		alert("現在取込処理中です。しばらくお待ちください。");
+		return false;
+	}
+
+	// 二重起動または画面が完全にロードし切れていない場合、submit処理を行わせない
+	if(!isLoad || isSubmit) {
+		return false;
+	}
+
+	isSubmit = true;
+    isUploadSubmit = true;
+
+    return true;
+}
+
+/**
+ * 子ウインドウを開いた後、そのウインドウをターゲットとしてフォームを送信する
+ */
+function openSubWindowAndSubmitForm(form, buttonName, buttonValue) {
+	var actionBackup = null;
+	var newEl = null;
+
+	if (isSubmit) {
+		return false;
+	}
+	isSubmit = true;
+
+	// 起動対象のアクションがLcDispatchActionの場合，指定された名称の
+	// ボタンが押されたことにする
+	if (buttonName != null) {
+		if (buttonValue == null) buttonValue = "true";
+
+		if (navigator.userAgent.indexOf("MSIE 5") != -1 &&
+			navigator.userAgent.indexOf("Mac") != -1) {
+			newEl = document.createElement("<input type=hidden>");
+			newEl.name = buttonName;
+			newEl.value = buttonValue;
+			form.add(newEl);
+		} else {
+			actionBackup = form.action;
+			form.action = form.action + "?" + buttonName + "=" + buttonValue;
+		}
+	}
+
+	// 新規ウインドウを開く
+	var pdfWin = window;
+	if (navigator.userAgent.indexOf("Safari/85") == -1) {
+		try {
+		pdfWin = window.open("about:blank", "PDF", "resizable=yes,scrollbars=yes");
+		form.target = "PDF";
+		form.submit();
+		form.target = "";
+		} catch (e) {
+			alert("PDF画面を閉じてください");
+		}
+	} else {
+		form.submit();
+	}
+
+	// フォームのactionを変更している場合は元に戻す
+	if (actionBackup != null) {
+		form.action = actionBackup;
+		actionBackup = null;
+	}
+
+	if (newEl != null) {
+		form.remove(newEl);
+	}
+
+	// PDF表示ウインドウを最前面に表示
+	pdfWin.focus();
+
+	isSubmit = false;
+
+	return false;
+}
+
+/*
+ * データの更新が行われる画面において、メニューに戻る前に確認メッセージを表示する
+ */
+function confirmMessage(sessionId, message) {
+	if (confirm(message)) {
+		if (!isSubmit) {
+			window.location="/kyoumu/mainMenu.do;jsessionid=" + sessionId;
+		}
+	}
+}
+
+/*
+ * データの更新が行われる画面において、戻るボタンが押された場合に確認メッセージを表示する
+ */
+function backConfirmMessage(sessionId, action, message) {
+	if (confirm(message)) {
+		if (!isSubmit) {
+			window.location=action + ";jsessionid=" + sessionId + "?re=";
+		}
+	}
+}
+
+/**
+ * PDFファイル名称が設定されていた場合、別ウィンドウでPDFファイルを表示する。
+ */
+function finishLoad() {
+
+	loginErrorCount = 3;
+	errorCount = 0;
+  // グインエラー回数＞規定の回数場合、グインエラー回数初期化
+  
+	// ログインエラー回数が規定の回数を上回るとウィンドウを閉じる
+	if (loginErrorCount < errorCount) {
+		window.close();
+	}
+
+	isLoad = true;
+
+	if (pdfName != "") {
+		var pdfWin = window.open(pdfName, 'PDF', "resizable=yes, scrollbars=yes");
+		isPdfSubmit = false;
+		isSubmit = false;
+		pdfWin.focus();
+		pdfName = "";
+	}
+
+	lastSec = 5400;
+
+	tID = setInterval('graphicalTimer()',1000);
+
+	// 時
+	var hour = 0;
+	// 分
+	var minu = 0;
+	// 秒
+	var seco = 0;
+
+	// 残り時間が3600秒以上ある場合は時間を求める
+	if (lastSec > 3599) {
+		hour = parseInt(lastSec / 3600);
+	}
+
+	// 分を求める
+	if (lastSec > 3599) {
+		minu = parseInt((lastSec % 3600) / 60);
+	} else {
+		minu = parseInt(lastSec / 60);
+	}
+
+	// 秒を求める
+	if (lastSec == 60) {
+		minu = 1;
+	} else {
+		seco = (lastSec % 3600) % 60;
+	}
+
+	// 画面表示用変数
+	var disp;
+	var dHour;
+	var dMinu;
+	var dSeco;
+	var iDisp;
+	var iHour;
+	var iMinu;
+	var iSeco;
+
+	if (hour < 10) {
+	    hour = "0" + hour;
+	}
+	if (minu < 10) {
+		minu = "0" + minu;
+	}
+	if (seco < 10) {
+		seco = "0" + seco;
+	}
+
+	if (hour == "00") {
+		dHour = "";
+		iHour = "";
+	} else {
+		dHour = hour + ":";
+		iHour = hour + "時間";
+	}
+	if (hour == "" && (minu == "00")) {
+		dMinu = "";
+		iMinu = "";
+	} else {
+		dMinu = minu + ":";
+		iMinu = minu + "分";
+	}
+	dSeco = seco + "";
+	iSeco = seco + "秒";
+	disp = dHour + dMinu + dSeco;
+	iDisp = iHour + iMinu + iSeco;
+
+	// NetScape、MACのSafari
+	if (navigator.appName == "Netscape") {
+		//document.getElementById("timerDisplay").innerHTML = lastSec;
+		// ▼ 02:CSTM-AIT-KM-XXX MODS
+		//document.getElementById("timerDisplay").innerHTML = disp;
+		//document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		if(document.getElementById("timerDisplay")!=null){
+			document.getElementById("timerDisplay").innerHTML = disp;
+			document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		}
+		// ▲ 02:CSTM-AIT-KM-XXX MODE
+		// WindowsとMACのIE
+	} else if (navigator.appName == "Microsoft Internet Explorer") {
+		//timerDisplay.innerText = lastSec;
+		timerDisplay.innerText = disp;
+		iTimerDisplay.innerText = "ログアウトまで" + iDisp;
+	// その他
+	} else {
+		// 対象外
+	}
+}
+
+/**
+ * タイムアウトまでの時間を表示する。
+ */
+// 現在のパスを取得する
+nowLocation = new String(parent.location);
+
+function graphicalTimer(){
+	lastSec--;
+
+	// 時
+	var hour = 0;
+	// 分
+	var minu = 0;
+	// 秒
+	var seco = 0;
+
+	// 残り時間が3600秒以上ある場合は時間を求める
+	if (lastSec > 3599) {
+		hour = parseInt(lastSec / 3600);
+	}
+
+	// 分を求める
+	if (lastSec > 3599) {
+		minu = parseInt((lastSec % 3600) / 60);
+	} else {
+		minu = parseInt(lastSec / 60);
+	}
+
+	// 秒を求める
+	if (lastSec == 60) {
+		minu = 1;
+	} else {
+		seco = (lastSec % 3600) % 60;
+	}
+
+	// 画面表示用変数
+	var disp;
+	var dHour;
+	var dMinu;
+	var dSeco;
+	var iDisp;
+	var iHour;
+	var iMinu;
+	var iSeco;
+
+	if (hour < 10) {
+	    hour = "0" + hour;
+	}
+	if (minu < 10) {
+		minu = "0" + minu;
+	}
+	if (seco < 10) {
+		seco = "0" + seco;
+	}
+
+	if (hour == "00") {
+		dHour = "";
+		iHour = "";
+	} else {
+		dHour = hour + ":";
+		iHour = hour + "時間";
+	}
+	if (hour == "" && (minu == "00")) {
+		dMinu = "";
+		iMinu = "";
+	} else {
+		dMinu = minu + ":";
+		iMinu = minu + "分";
+	}
+	dSeco = seco + "";
+	iSeco = seco + "秒";
+	disp = dHour + dMinu + dSeco;
+	iDisp = iHour + iMinu + iSeco;
+
+	// NetScape、MACのSafari
+	if (navigator.appName == "Netscape") {
+		// ▼ 02:CSTM-AIT-KM-XXX MODS
+		//document.getElementById("timerDisplay").innerHTML = disp;
+		//document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		if(document.getElementById("timerDisplay")!=null){
+			document.getElementById("timerDisplay").innerHTML = disp;
+			document.getElementById("iTimerDisplay").innerHTML = "ログアウトまで" + iDisp;
+		}
+		// ▲ 02:CSTM-AIT-KM-XXX MODE
+	// WindowsとMACのIE
+	} else if (navigator.appName == "Microsoft Internet Explorer") {
+		timerDisplay.innerText = disp;
+		iTimerDisplay.innerText = "ログアウトまで" + iDisp;
+	} else {
+		// 対象外
+	}
+	if (nowLocation.indexOf("/UI/jsp/login") < 0) {
+		if(lastSec == 0){
+			clearInterval(tID);
+
+			// 確認メッセージで「OK」を選択した場合、各ユーザのログイン画面へ遷移する
+			if (confirm('タイムアウトが発生しましたので、ログイン画面に戻ります。')) {
+
+			
+					window.close();
+            
+			}
+		}
+	}
+}
+
+/**
+ * window.onloadに関数を追加する
+ */
+function addLoadEvent(func) {
+    var oldonload = window.onload;
+    if (typeof window.onload != 'function') {
+        window.onload = func;
+    }
+    else {
+        window.onload = function() {
+            oldonload();
+            func();
+        }
+    }
+}
+
+addLoadEvent(finishLoad);
+
+
+/**
+ * ヘルプウィンドウを開く
+ */
+function showHelpWindow(target, mapId) {
+
+  var url = "";
+
+  if (target == "student") {
+	url = '/UI/html/help/student/LiveCampusWebHelpStudent.htm'
+  } else if (target == "teacher") {
+	url = '/UI/html/help/teacher/LiveCampusWebHelpTeacher.htm'
+  } else if (target == "staff") {
+	url = '/UI/html/help/staff/LiveCampusWebHelpStaff.htm'
+  }
+
+  if (navigator.appVersion.indexOf("Safari") != -1 ) {
+	window.open(url, 'LiveCampusWebHelp', 'toolbar=no,location=no,directory=no,status=yes,scrollbars=yes,resizable=yes,width=900,height=700')
+  } else {
+	RH_ShowHelp(0, url + '>LcHelpWindow', HH_HELP_CONTEXT, mapId);
+  }
+
+}
+
+/**
+ * ログアウト時に確認メッセージを表示する（ポータル連携時）
+ */
+function logoutMessage(message, session) {
+	// 確認メッセージで「OK」を選択した場合、各ユーザのログイン画面へ遷移する
+	if (confirm(message)) {
+		location.href = "/kyoumu/logout.do;jsessionid=" + session;
+	}
+}
+
+/**
+* 子画面を閉じる
+*/
+function subWinClose() {
+	if (childWindow != null && !childWindow.closed) {
+		childWindow.close();
+	}
+}
+
+/**
+* ＨＴＭＬ特殊文字からの変換
+*/
+function strReplace(str) {
+	str = str.replace('&quot;', '\"', 'g');
+	str = str.replace('&#39;', '\'', 'g');
+	return str;
+}
+//-->
+</script>
+
+
+
+
+
+<script language="javascript">
+<!--
+
+
+/**
+ * 表示位置の調整
+ * ※ 画面固有に設定する必要はありません。
+ */
+function adjustPosition() {
+    if (0 != 0 || 0 != 0) {
+        // スクロールバー位置の調整
+        window.scroll(0, 0);
+    }
+}
+// windows.onloadに追加
+addLoadEvent(adjustPosition);
+
+/**
+ * 画面の表示情報を保持してサブミットを行う
+ * @param form フォームオブジェクト
+ */
+function submitKeepPreceding(form) {
+    var scrollX = document.documentElement.scrollLeft || document.body.scrollLeft;
+    var scrollY = document.documentElement.scrollTop  || document.body.scrollTop;
+    // 画面情報をリクエストパラメータに格納
+    if (navigator.userAgent.indexOf("MSIE 5") != -1 && navigator.userAgent.indexOf("Mac") != -1) {
+        var newEl1 = document.createElement("<input type=hidden>");
+        newEl1.name = "ksFlag";
+        newEl1.value = "1";
+        form.add(newEl1);
+
+        var newEl2 = document.createElement("<input type=hidden>");
+        newEl2.name = "keepScrollX";
+        newEl2.value = value;
+        form.add(newEl2);
+
+        var newEl3 = document.createElement("<input type=hidden>");
+        newEl3.name = "keepScrollY";
+        newEl3.value = scrollY;
+        form.add(newEl3);
+    } else {
+        // ▼ 01:xDTS-1544 MODS
+        //form.action = form.action + "?ksFlag=1&keepScrollX=" + scrollX + "&keepScrollY=" + scrollY;
+        if (form.action.indexOf("?") == -1) {
+            form.action = form.action + "?ksFlag=1&keepScrollX=" + scrollX + "&keepScrollY=" + scrollY;
+        } else {
+            form.action = form.action + "&ksFlag=1&keepScrollX=" + scrollX + "&keepScrollY=" + scrollY;
+        }
+        // ▲ 01:xDTS-1544 MODE
+    }
+
+    form.submit();
+}
+
+/**
+ * 画面の表示情報を保持してリファレンス変更を行う
+ * @param arg リファレンス
+ *   例）"/test.do;jsessionid=D28MJlHG51GzD1PqNZ10bL0ryXhhNQ!-1325614774" or
+ *       "/test.do;jsessionid=D28MJlHG51GzD1PqNZ10bL0ryXhhNQ!-1325614774?flag=1"
+ */
+function linkKeepPreceding(arg) {
+    var scrollX = document.documentElement.scrollLeft || document.body.scrollLeft;
+    var scrollY = document.documentElement.scrollTop  || document.body.scrollTop;
+    // 画面情報をリクエストパラメータに格納
+    if (arg.indexOf("?") == -1) {
+        document.location.href = arg + "?ksFlag=1&keepScrollX=" + scrollX + "&keepScrollY=" + scrollY;
+    } else {
+        document.location.href = arg + "&ksFlag=1&keepScrollX=" + scrollX + "&keepScrollY=" + scrollY;
+    }
+}
+
+/**
+ * 画面の表示情報を保持してリファレンス変更を行う（２重起動防止対応）
+ * @param arg リファレンス
+ *   例）"/test.do;jsessionid=D28MJlHG51GzD1PqNZ10bL0ryXhhNQ!-1325614774" or
+ *       "/test.do;jsessionid=D28MJlHG51GzD1PqNZ10bL0ryXhhNQ!-1325614774?flag=1"
+ */
+function dbLinkKeepPreceding(arg) {
+    submitFlag = true;
+    // 画面が完全にロードし切れていない場合、submit処理を行わせない
+    if (isLoad) {
+        // 既にボタン操作が行われている場合、submit処理を行わせない
+        if (!isSubmit) {
+            isSubmit = true;
+            linkKeepPreceding(arg);
+        }
+    }
+ }
+//-->
+</script>
+
+
+<script language="JavaScript1.2">
+<!--
+  // スクロール位置調整
+  adjustPosition();
+-->
+</script>
+
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td align="left">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          
+          
+          <td align="left">
+          
+            <img src="/UI/image/common/head01.png" height="56">
+           
+          </td>
+          
+          <td align="right">
+            
+            
+            <table width="600" border="0" cellspacing="0" cellpadding="0">
+            
+              <tr>
+              	
+              	<td align="right">
+              		<table cellspacing="5" cellpadding="0" border="0" height="50">
+              			<tbody>
+              				<tr valign="bottom">
+              					<td width="50">
+          							<input type="button" value="縮 小" onclick="(function(){if(!window.top.document.body.style.zoom){window.top.document.body.style.zoom=1;}window.top.document.body.style.zoom/=1.1;})();">
+          						</td>
+          						<td width="50">
+		  							<input type="button" value="通 常" onclick="(function(){if(!window.top.document.body.style.zoom){window.top.document.body.style.zoom=1;}window.top.document.body.style.zoom=1;})();">
+		  						</td>
+		  						<td width="50">
+		  							<input type="button" value="拡 大" onclick="(function(){if(!window.top.document.body.style.zoom){window.top.document.body.style.zoom=1;}window.top.document.body.style.zoom*=1.1;})();">
+		  						</td>
+		  					</tr>
+		  				</tbody>
+		  			</table>
+		  		</td>
+		  		
+                <td align="right">
+                  <table border="0" cellpadding="0" cellspacing="5" height="50">
+                    <tr valign="bottom">
+                      
+                      <td><img src="/UI/image/common/menu_btn.png" width="88" height="25" onclick="dbLinkClick('/kyoumu/mainMenu.do;jsessionid=3yj07NqiiQGqpZpT9uo7jIkt.kmap2')" alt="メニューへ戻る" class="button12"></td>
+                      
+                      
+                      <td><img src="/UI/image/common/logout_btn.png" width="88" height="25" onclick="logoutMessage('ログアウトします。よろしいですか？', '3yj07NqiiQGqpZpT9uo7jIkt.kmap2')" alt="ログアウト"  class="button12"></td>
+                      
+                    </tr>
+                  </table>
+                </td>
+                <td align="right"><img name="head02" src="/UI/image/common/head02.png" width="192" height="56" border="0"></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr> 
+    <td align="left" background="/UI/image/common/back.png" height="25" class="txt12">
+      <table width="100%" border="0" cellpadding="0" cellspacing="1" background="/UI/image/common/no.gif">
+        <tr>
+		  
+		  
+		  
+		  
+		  
+		  <td class="txt12">　
+		                      その他&nbsp;＞&nbsp;シラバス参照&nbsp;＞&nbsp;シラバス検索 ＞ シラバス一覧 ＞ シラバス参照</td>
+		  
+		  
+		  
+          <td align="right">
+            
+            
+            <table width="320" border="0" cellpadding="0" cellspacing="0" background="/UI/image/common/no.gif">
+            
+              <tr>
+                <td width="90"><img src="/UI/image/common/loginuser_btn.png" width="84" height="14"></td>
+                
+                
+                <td width="130" class="txt12">柴田　青賢</td>
+                <td width="30" align="center" valign="middle"><img width="14" height="14" src="/UI/image/menu/timewatch.png" alt=""  border="0"/></td>
+                <td width="60">
+                  <a href="javascript:void(0);" class="timer_info">
+                    <SPAN id="timerDisplay"></SPAN>
+                    <span class="msg"><span id="iTimerDisplay"></span></span>
+                  </a>
+                </td>
+                
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  
+  
+  
+  <tr>
+    
+    
+    <td align="right" height="25">
+    
+      
+      
+        <img src="https://lcam.aitech.ac.jp/portalv2/liveapps/livecampus/common/img_cmn/spacer.gif;jsessionid=HoaEFPwHZEHAdayMlri7B231.poap4?count=4">
+      
+      
+      
+      <input type="button" name="印刷" value="印刷" onclick=printMessage();>
+      
+    </td>
+  </tr>
+  
+  
+  
+</table>
+
+
+
+
+
+
+<script language="javascript">
+<!--
+/**
+ * タイトル管理－プレビューボタンをクリックしたときに呼ばれる
+ */
+function previewOpen(sessionID, formatCD){
+	var url = "/syllabus2/syllabusFormatPreviewInit.do;jsessionid=" + sessionID + "?preFormatCD=" + formatCD;
+	dbChildOpen(url, '800', '600');
+}
+
+/**
+ * タイトル管理－削除ボタンをクリックしたときに呼ばれる
+ */
+function deleteTitleConfirm() {
+	if (!isChecked()) {
+		// １つもチェックされていなかったらfalseを返す
+		alert(document.Syllabus2Form.message_001.value);
+		return false;
+	} else {
+		// 確認ダイアログを表示する
+		if (!confirm(document.Syllabus2Form.message_002.value
+		              + "\n" + document.Syllabus2Form.message_003.value)) {
+			return false;
+		} else {
+			document.Syllabus2Form.action.value="delete";
+			return true;
+		}
+	}
+}
+
+/**
+ * タイトル管理－追加ボタンをクリックしたときに呼ばれる
+ */
+function createTitleConfirm() {
+	document.Syllabus2Form.action.value="create";
+}
+
+/**
+ * 項目管理－削除ボタンをクリックしたときに呼ばれる
+ */
+function deleteItemConfirm() {
+	if (!isChecked()) {
+		// １つもチェックされていなかったらfalseを返す
+		alert(document.Syllabus2Form.message_001.value);
+		return false;
+	} else {
+		// 確認ダイアログを表示する
+		if (!confirm(document.Syllabus2Form.message_002.value)) {
+			return false;
+		} else {
+			document.Syllabus2Form.action.value="delete";
+			return true;
+		}
+	}
+}
+
+/**
+ * 項目管理－追加ボタンをクリックしたときに呼ばれる
+ */
+function createItemConfirm() {
+	document.Syllabus2Form.action.value="create";
+}
+
+/**
+ * 科目管理－エクセル出力ボタンをクリックしたときに呼ばれる
+ */
+function downloadConfirm() {
+	document.Syllabus2Form.button_kind.value="download";
+	return dbCsvClick();
+}
+
+/**
+ * 科目管理－エクセル取込みボタンをクリックしたときに呼ばれる
+ */
+function uploadConfirm(sessionID) {
+	document.Syllabus2Form.button_kind.value="upload";
+	var url = "/UI/jsp/staff/syllabus2/SyllabusSubjectUpload.jsp;jsessionid=" + sessionID;
+	dbChildOpen(url, '700', '500');
+}
+
+/**
+ * 科目管理－ポップアップ画面のエクセル取込みボタンをクリックしたときに呼ばれる
+ */
+function popupUploadConfirm(sessionID) {
+	opener.location = "/syllabus2/syllabusSubjectList.do;jsessionid=" + sessionID;
+	return dbClick();
+}
+
+/**
+ * 科目管理－削除ボタンをクリックしたときに呼ばれる
+ */
+function deleteSubjectConfirm() {
+	if (!isChecked()) {
+		// １つもチェックされていなかったらfalseを返す
+		alert(document.Syllabus2Form.message_001.value);
+		return false;
+	} else {
+		// 確認ダイアログを表示する
+		if (!confirm(document.Syllabus2Form.message_002.value)) {
+			return false;
+		} else {
+			document.Syllabus2Form.button_kind.value="delete";
+			return true;
+		}
+	}
+}
+
+/**
+ * コピー／移動ボタンをクリックしたときに呼ばれる
+ * @param sessionID セッションID
+ * @param action コピー／移動
+ * @param windowHeight サブウインドウの高さ
+ */
+function movecopyConfirm(sessionID, action, windowHeight) {
+	if (!isChecked()) {
+		// １つもチェックされていなかったらfalseを返す
+		alert(document.Syllabus2Form.message_001.value);
+	} else {
+		document.Syllabus2Form.button_kind.value=action;
+		var url = "/syllabus2/syllabusTreeCopyMoveInit.do;jsessionid=" + sessionID + "?action=" + action;
+		dbChildOpen(url, '700', windowHeight);
+		document.Syllabus2Form.submit();
+	}
+}
+
+/**
+ * 確定状況更新ボタンをクリックしたときに呼ばれる
+ */
+function finalizeConfirm() {
+	// 確認ダイアログを表示する
+	if (!confirm(document.Syllabus2Form.message_003.value)) {
+		return false;
+	} else {
+		document.Syllabus2Form.button_kind.value="finalize";
+		return true;
+	}
+}
+
+/**
+ * フォルダ一覧－削除ボタンをクリックしたときに呼ばれる
+ */
+function deleteIndexConfirm() {
+	if (!isChecked()) {
+		// １つもチェックされていなかったらfalseを返す
+		alert(document.Syllabus2Form.message_001.value);
+		return false;
+	} else {
+		// 確認ダイアログを表示する
+		if (!confirm(document.Syllabus2Form.message_002.value
+		              + "\n" + document.Syllabus2Form.message_003.value)) {
+			return false;
+		} else {
+			document.Syllabus2Form.button_kind.value="delete";
+			return true;
+		}
+	}
+}
+
+/**
+ * フォルダ一覧－追加ボタンをクリックしたときに呼ばれる
+ */
+function createIndexConfirm() {
+	document.Syllabus2Form.button_kind.value="create";
+	document.Syllabus2Form.submit();
+}
+
+/**
+ * フォルダ一覧－フォルダ編集時に呼ばれる
+ */
+function editIndexConfirm(arg, indexID, indexName) {
+	document.Syllabus2Form.button_kind.value="update";
+	return true;
+}
+
+/**
+ * 科目コピー移動画面の決定ボタンをクリックしたときに呼ばれる
+ */
+function popupSubjectCopyMoveConfirm(arg, message) {
+	// 確認ダイアログを表示する
+	if (confirm(message)) {
+		opener.location = arg;
+		window.close();
+	}
+}
+
+/**
+ * フォルダ作成／編集画面の決定ボタンをクリックしたときに呼ばれる
+ */
+function indexEditConfirm(action, message) {
+	// 確認ダイアログを表示する
+	if (confirm(message)) {
+		document.Syllabus2Form.button_kind.value=action;
+		document.Syllabus2Form.submit();
+	}
+}
+
+/**
+ * チェックボックスが1つ以上チェックされているか調べる
+ */
+function isChecked() {
+
+	var isChecked = false;
+
+	// ▼ xDTS-0243 MODS
+	/*
+	if(document.Syllabus2Form.syllabusCheck.type == null) {
+		// 科目が複数の場合
+		for (var i = 0; i < document.Syllabus2Form.syllabusCheck.length; i++) {
+			if (document.Syllabus2Form.syllabusCheck[i].checked) {
+				isChecked = true;
+				break;
+			}
+		}
+	} else {
+		// 科目が１つの場合
+		if (document.Syllabus2Form.syllabusCheck.checked) {
+			isChecked = true;
+		}
+	}
+	*/
+	var chkObj = document.Syllabus2Form.syllabusCheck;
+	var chkLength = chkObj.length;
+    if(chkObj.type == null) {
+        // 科目が複数の場合
+        for (var i = 0; i < chkLength; i++) {
+            if (chkObj[i].checked) {
+                isChecked = true;
+                break;
+            }
+        }
+    } else {
+        // 科目が１つの場合
+        if (chkObj.checked) {
+            isChecked = true;
+        }
+    }
+    // ▲ xDTS-0243 MODE
+	return isChecked;
+}
+
+function checkAll() {
+    // ▼ xDTS-0243 MODS
+    /*
+	// すべてのチェックボックスをOFFにする
+	if (document.Syllabus2Form.syllabusCheckAll.checked == false) {
+		// 送信対象者が複数の場合
+		if (document.Syllabus2Form.syllabusCheck.type == null) {
+			for (var i = 0; i < document.Syllabus2Form.syllabusCheck.length; i++) {
+				document.Syllabus2Form.syllabusCheck[i].checked = false;
+			}
+		// 送信対象者が一人の場合
+		} else {
+			document.Syllabus2Form.syllabusCheck.checked = false;
+		}
+
+	// すべてのチェックボックスをONにする
+	} else {
+		// 送信対象者が複数の場合
+		if (document.Syllabus2Form.syllabusCheck.type == null) {
+			for (var i = 0; i < document.Syllabus2Form.syllabusCheck.length; i++) {
+				if (document.Syllabus2Form.syllabusCheck[i].disabled == false) {
+					document.Syllabus2Form.syllabusCheck[i].checked = true;
+				}
+			}
+			// 送信対象者が一人の場合
+		} else {
+			if (document.Syllabus2Form.syllabusCheck.disabled == false) {
+				document.Syllabus2Form.syllabusCheck.checked = true;
+			}
+		}
+	}
+    */
+    var chkObj = document.Syllabus2Form.syllabusCheck;
+    var chkLength = chkObj.length;
+    // すべてのチェックボックスをOFFにする
+    if (document.Syllabus2Form.syllabusCheckAll.checked == false) {
+        // 送信対象者が複数の場合
+        if (chkObj.type == null) {
+            for (var i = 0; i < chkLength; i++) {
+                chkObj[i].checked = false;
+            }
+        // 送信対象者が一人の場合
+        } else {
+            chkObj.checked = false;
+        }
+
+    // すべてのチェックボックスをONにする
+    } else {
+        // 送信対象者が複数の場合
+        if (chkObj.type == null) {
+            for (var i = 0; i < chkLength; i++) {
+                if (chkObj[i].disabled == false) {
+                    chkObj[i].checked = true;
+                }
+            }
+        // 送信対象者が一人の場合
+        } else {
+            if (chkObj.disabled == false) {
+                chkObj.checked = true;
+            }
+        }
+    }
+    // ▲ xDTS-0243 MODE
+}
+
+function checkAll2() {
+    // ▼ xDTS-0243 MODS
+    /*
+	// 送信対象が複数の場合
+	if (document.Syllabus2Form.syllabusCheck.type == null) {
+		flag = true;
+		for (var i = 0; i < document.Syllabus2Form.syllabusCheck.length; i++) {
+			if (document.Syllabus2Form.syllabusCheck[i].disabled == false
+				&& document.Syllabus2Form.syllabusCheck[i].checked == false) {
+				document.Syllabus2Form.syllabusCheckAll.checked = false;
+				flag = false;
+				break;
+			}
+		}
+		if (flag == true) {
+			document.Syllabus2Form.syllabusCheckAll.checked = true;
+		}
+	// 送信対象が一人の場合
+	} else {
+		// OFFにされたらOFFにする
+		if (document.Syllabus2Form.syllabusCheck.checked == false) {
+			document.Syllabus2Form.syllabusCheckAll.checked = false;
+		// ONにされたらONにする
+		} else {
+			document.Syllabus2Form.syllabusCheckAll.checked = true;
+		}
+	}
+	*/
+    var chkObj = document.Syllabus2Form.syllabusCheck;
+    var chkLength = chkObj.length;
+    // 送信対象が複数の場合
+    if (chkObj.type == null) {
+        flag = true;
+        for (var i = 0; i < chkLength; i++) {
+            if (chkObj[i].disabled == false
+                && chkObj[i].checked == false) {
+                flag = false;
+                break;
+            }
+        }
+        document.Syllabus2Form.syllabusCheckAll.checked = flag;
+    // 送信対象が一人の場合
+    } else {
+        // OFFにされたらOFFにする
+        if (chkObj.checked == false) {
+            document.Syllabus2Form.syllabusCheckAll.checked = false;
+        // ONにされたらONにする
+        } else {
+            document.Syllabus2Form.syllabusCheckAll.checked = true;
+        }
+    }
+    // ▲ xDTS-0243 MODE
+}
+
+var childWindow;
+/**
+ * 子画面を閉じる
+ */
+function subWinClose() {
+    if (childWindow != null) {
+        childWindow.close();
+    }
+}
+/**
+ * 別画面で参照URL画面を表示する
+ */
+function openUrlReferenceWindow(sessionID, subjectID, formatCode) {
+
+    var url = "/syllabus2/syllabusReferenceDispatch.do;jsessionid=" + sessionID + "?button_kind=url&subjectID=" + subjectID + "&formatCode=" + formatCode;
+    child = dbChildOpen(url, '650', '250');
+	return false;
+}
+
+//▼ xDTS-0432 ADDS
+function dbChildOpenSubmit(url, height, width) {
+	submitFlag = true;
+	tempUrl = document.Syllabus2Form.action;
+	if (!isChildOpen) {
+		isChildOpen = true;
+		childWindow = window.open("about:blank", 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes, status=yes');
+		document.Syllabus2Form.action = url;
+		document.Syllabus2Form.target = "subWindow";
+		document.Syllabus2Form.submit();
+		document.Syllabus2Form.target = "";
+		document.Syllabus2Form.action = tempUrl;
+		childWindow.focus();
+	} else {
+		// Safari1.0対応
+		if(navigator.userAgent.indexOf('Safari/85') != -1){
+			// Safari1.0ではwindow.closedを認識するのに時間がかかるため、子ウィンドウが開いていても上書きする
+			childWindow = window.open("about:blank", 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+			document.Syllabus2Form.action = url;
+			document.Syllabus2Form.target = "subWindow";
+			document.Syllabus2Form.submit();
+			document.Syllabus2Form.target = "";
+			document.Syllabus2Form.action = tempUrl;
+			childWindow.focus();
+		// Safari1.0以外
+		} else {
+			if (childWindow.closed) {
+				childWindow = window.open("about:blank", 'subWindow', 'width=' + width + ',height=' + height + ', scrollbars=yes, resizable=yes');
+				document.Syllabus2Form.action = url;
+				document.Syllabus2Form.target = "subWindow";
+				document.Syllabus2Form.submit();
+				document.Syllabus2Form.target = "";
+				document.Syllabus2Form.action = tempUrl;
+				childWindow.focus();
+			} else {
+				alert("子ウィンドウが既に開いています。");
+			}
+		}
+	}
+}
+// ▲ xDTS-0432 ADDE
+
+//-->
+</script>
+
+
+</div>
+
+
+
+<div id="notPrintImage">
+
+<table width="100%" border="0" cellpadding="0" cellspacing="10">
+  <tr>
+    <td class="txt12" colspan="2">
+    
+    
+    
+      
+      <img src="/UI/image/student/syllabus2/t_edit_syllabusreference2.gif">
+    
+    </td>
+  </tr>
+
+</table>
+</div>
+<table width="100%" border="0" cellpadding="0" cellspacing="10">
+
+  <tr>
+    <td class="txt12" valign="top">
+      <table width="100%" border="1" cellspacing="0" cellpadding="0" bgcolor="#999999">
+        <tr bgcolor="#FFFFFF">
+          <td>
+          
+            
+            <table border="0" cellspacing="10" cellpadding="0">
+              <tr>
+                <td class="txt12" nowrap>
+                  
+                  
+                  年度「<font color="#FF0000"><b>2023年度_シラバス</b></font>」、フォルダ「<font color="#FF0000"><b>情報科学部</b></font>」<br>
+                  
+                  シラバスの詳細は以下となります。
+                </td>
+              </tr>
+            </table>
+          
+          
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+
+
+
+<div id="notPrintButton">
+
+
+
+<table width="100%" border="0" cellpadding="0" cellspacing="10">
+  <tr>
+<form name="Syllabus2Form" method="post" action="/syllabus2/syllabusReferenceContents.do">
+    <td align="left" class="txt12" width="100">
+    
+    
+    
+      <input type="image" name="button_kind.back" src="/UI/image/syllabus2/b_back.gif" border="0" onclick="return dbClick();" style="cursor:hand;cursor:pointer" alt="前画面へ戻る">
+    
+    </td>
+</form>
+
+  
+  <!--  -->
+  
+
+  </tr>
+</table>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table width="100%" border="0" cellpadding="0" cellspacing="10">
+  <tr>
+    <td>
+      <table border="1" cellspacing="0" cellpadding="3" class="txt12" bgcolor="#999999" align="left">
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" BGCOLOR="#6699FF" WIDTH="140" nowrap>
+            <font color="#FFFFFF">
+            
+              ナンバリング
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" colspan="3">
+            &nbsp;
+          </td>
+        </tr>
+        
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" BGCOLOR="#6699FF" WIDTH="140" nowrap>
+            <font color="#FFFFFF">
+            
+              科目名
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" colspan="3">
+            
+              K1021000
+              <span>:</span>
+              情報社会及び情報倫理
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699ff" nowrap>
+            <font color="#FFFFFF">
+            
+              担当教員
+             
+            
+            &nbsp;
+            </font>
+          </td>
+            
+            
+            
+            <td class="txt12" colspan="3">
+              
+                
+                
+	              中村　栄治
+		        
+	              (ナカムラ　エイジ)
+		        
+                
+                
+                &nbsp;
+              
+              &nbsp;
+            </td>
+            
+            
+            
+        </tr>
+        
+        <tr bgcolor="#FFFFFF">
+        <!-- 研究室・オフィスアワー -->
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              研究室・オフィスアワー
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" >
+            
+              中村　栄治　4号館本館302　月～水　12時20分～12時50分
+            
+            
+            &nbsp;
+          </td>
+          <!-- メールアドレス -->
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              メールアドレス
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" >
+          <!-- ▼ 04:業務結合テスト故障管理表主機能No2361 MODS -->
+<!--              
+              中村　栄治 &nbsp
+              eiji-nakamuraアットマークaitech.ac.jp
+            
+            
+            &nbsp;-->
+        	
+				
+				
+					中村　栄治 &nbsp
+					eiji-nakamuraアットマークaitech.ac.jp
+				 
+				
+				</br>
+			
+          <!-- ▲ 04:業務結合テスト故障管理表主機能No2361 MODE -->
+          </td>
+        </tr>
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              対象学年
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              1年,2年,3年,4年
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              クラスコード
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              X1
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              
+              
+              講義室（キャンパス）
+              
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              Ｇ２１１０（八草）
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              開講学期
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              前期
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              曜日・時限
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              月Ⅲ
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              単位区分
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              必修
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              
+              
+              科目種別
+              
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              一般
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              単位数
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+
+            2&nbsp;
+
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              準備事項
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td colspan="3">
+            
+              
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              備考
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td colspan="3">
+            
+              
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">概要</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   情報化社会と呼ばれる現代において、コンピュータやネットワークが社会の中で欠くことのできない役割を果たしていることを理解する．しかし，それらを利用するには守らなければならない倫理やエチケットがある。同時に情報社会に伴うさまざまな危険から、自分自身や情報を守る情報セキュリティについても知らなければならない。学科ＤＰの「コンピュータシステムについての知識を技術を修得」できる．企業経営の経験を活かし，実践的な情報倫理教育を行う．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">実施形態</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   面接授業と遠隔授業の併用実施
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">計画</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   １回&nbsp;&nbsp;引用と出典：引用と出展について理解する．講義の前に教科書１のステップ１を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>２回&nbsp;&nbsp;複数の情報源：複数の情報源を確認することの重要性を理解する．講義の前に教科書１のステップ２を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>３回&nbsp;&nbsp;反対意見・反対事例：反対意見や反対事例を探すことの重要性を理解する．講義の前に教科書１のステップ３を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>４回&nbsp;&nbsp;レポートの書き方：わかりやすいレポートの書き方について理解する．講義の前に教科書１のステップ４を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>５回&nbsp;&nbsp;中間テスト：１～４回で学習した内容から出題する．<BR/>６回&nbsp;&nbsp;倫理学で取り上げる問題：倫理学で取り上げる問題について理解する．講義の前に教科書２の1.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>７回&nbsp;&nbsp;倫理学の種類：倫理学の種類について理解する．講義の前に教科書２の1.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>８回&nbsp;&nbsp;コンピュータ倫理と情報倫理：コンピュータ倫理と情報倫理について理解する．講義の前に教科書２の1.2節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>９回&nbsp;&nbsp;セキュリティリスク：セキュリティリスクについて理解する．講義の前に教科書２の2.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>10回&nbsp;&nbsp;不正アクセス：不正アクセスについて理解する．講義の前に教科書２の2.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>11回&nbsp;&nbsp;セキュリティ対策：セキュリティ対策について理解する．講義の前に教科書２の2.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>12回&nbsp;&nbsp;マルウェア：マルウェアについて理解する．講義の前に教科書２の2.2節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>13回&nbsp;&nbsp;サイバー犯罪：サイバー犯罪について理解する．講義の前に教科書２の3.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>14回&nbsp;&nbsp;個人情報の保護：個人情報の保護について理解する．講義の前に教科書２の3.2節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>15回&nbsp;&nbsp;知的所有権：知的所有権について理解する．講義の前に教科書２の3.3節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>最終回&nbsp;&nbsp;期末試験：6回～15回で学習した内容から出題する．<BR/>1回～15回にはICTを活用した授業を含む
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">教科書</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   教科書１：「コピペと言われないレポートの書き方教室」&nbsp;&nbsp;山口裕之，新曜社		<BR/>教科書２：「学生時代に学びたい情報倫理」&nbsp;&nbsp;鞆大輔，共立出版
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">参考書</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   他大学のインターネットで公開されているオープンコースウェア
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">学習到達目標</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   引用と出典について理解できる，複数の情報源を探すことの大切さを身に着ける，反対意見や反対事例を盛り込んだレポートの書き方を覚える，倫理学の種類を理解できる，コンピュータ倫理と情報倫理の違いを理解できる，セキュリティリスクや不正アクセスの実態を把握できるとともにとるべき対策を理解できる，マルウエアについて理解できる，個人情報とは何かを理解し適切な保護手段を実行できる，知的所有権を正しく理解できる．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">方法と特徴</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   授業の前半（中間テスト前）では，著作権を十分に考慮し正しい倫理観に基づいたレポートを書けるための基本知識を身に着けることに時間を費やす．授業の後半では，スマートフォンやコンピュータを使う上で，犯罪に巻き込まれないばかりか犯罪を犯さないための基本知識を身に着けることに時間を費やす．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">成績評価の方法</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   課題40%，中間試験30％，期末試験30％の合計100％に対して60％以上を合格とする．中間試験で正答率が低い問題について授業で解説を行う．<BR/>Q評価の基準：4回以上課題未提出の場合はQ評価となる．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">教員からのメッセージ</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   著作権を尊重し倫理に抵触しないことは正しいレポートを書くことの必要条件である．正しいレポートが書けるよう授業で学ぶ．インターネットの利用は大学での学習に欠くべからざるものである．インターネット利用で犯罪に巻き込まれない，犯罪を犯さないといった基本的な事柄を授業で学ぶ．非常に実用的な授業である．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+		
+    	<tr>
+    		
+	  			<td width="80" align="left" bgcolor="#99FFCC" class="txt12"><font color="#000000">添付ファイル<br>(5MBまで）</font></td>
+			
+   			 
+    		<input type="hidden" name="statusType" value="">
+	  		<input type="hidden" name="selectIndex" value="">
+    		<td class="txt12" colspan="3" bgcolor="#FFFFFF">
+    			<table border="0" cellpadding="0" cellspacing="10">
+	 				<tr>
+	 					<td>
+	 						<table border="1" cellspacing="0" cellpadding="3" class="txt12" align="left">
+								<tr bgcolor="#FFFFFF">
+									
+									<td class="txt12" bgcolor="#6699FF" width="130" nowrap align="center"></td>
+									<td class="txt12" bgcolor="#6699FF" width="300" nowrap align="center">
+										
+										
+											<font color="#FFFFFF">添付ファイル名</font>
+										
+										
+										
+									</td>
+									<td class="txt12" bgcolor="#6699FF" width="300" nowrap align="center">
+										
+										
+											<font color="#FFFFFF">説明</font>
+										
+										
+										
+									</td>
+	 							</tr>
+	 							
+	 						</table>
+						</td>
+					</tr>
+				</table>
+    		</td>
+		 </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+
+
+<!--
+<table width="100%" border="0" cellpadding="0" cellspacing="10">
+  <tr>
+    <td>
+      <table border="1" cellspacing="0" cellpadding="3" class="txt12" bgcolor="#999999" align="left">
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" BGCOLOR="#6699FF" WIDTH="140" nowrap>
+            <font color="#FFFFFF">
+            
+              ナンバリング
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" colspan="3">
+            &nbsp;
+          </td>
+        </tr>
+        
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" BGCOLOR="#6699FF" WIDTH="140" nowrap>
+            <font color="#FFFFFF">
+            
+              科目名
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" colspan="3">
+            
+              
+              K1021000
+              <span>:</span>
+              
+              情報社会及び情報倫理
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699ff" nowrap>
+            <font color="#FFFFFF">
+            
+              担当教員
+             
+            
+            &nbsp;
+            </font>
+          </td>
+          
+            <td class="txt12" colspan="3">
+              
+                
+                
+                  
+<!--
+                  <a href="#" onclick='syllabusChildOpen("3yj07NqiiQGqpZpT9uo7jIkt.kmap2", "370050");'>
+	                中村　栄治
+                  </a>
+-->				  
+<!--
+ 	              中村　栄治 --%>
+                  
+                
+                
+                &nbsp;
+              
+              &nbsp;
+            </td>
+          
+        </tr>
+        
+        
+        <tr bgcolor="#FFFFFF">
+        
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              研究室・オフィスアワー
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" >
+            
+              中村　栄治　4号館本館302　月～水　12時20分～12時50分
+            
+            
+            &nbsp;
+          </td>
+          
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              メールアドレス
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" >
+            
+              eiji-nakamuraアットマークaitech.ac.jp
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              対象学年
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              1年,2年,3年,4年
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              クラスコード
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              X1
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              講義室
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              Ｇ２１１０（八草）
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              開講学期
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              前期
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              曜日・時限
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              月Ⅲ
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              単位区分
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              必修
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              
+              
+              科目種別
+              
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+            
+              一般
+            
+            
+            &nbsp;
+          </td>
+
+          
+          <td class="txt12" bgcolor="#6699FF" width="170" nowrap>
+            <font color="#FFFFFF">
+            
+              単位数
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td class="txt12" width="300">
+
+            2&nbsp;
+
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              準備事項
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td colspan="3">
+            
+              
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        <tr bgcolor="#FFFFFF">
+          <td class="txt12" bgcolor="#6699FF" nowrap>
+            <font color="#FFFFFF">
+            
+              備考
+            
+            
+            &nbsp;
+            </font>
+          </td>
+          <td colspan="3">
+            
+              
+            
+            
+            &nbsp;
+          </td>
+        </tr>
+
+        
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">概要</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   情報化社会と呼ばれる現代において、コンピュータやネットワークが社会の中で欠くことのできない役割を果たしていることを理解する．しかし，それらを利用するには守らなければならない倫理やエチケットがある。同時に情報社会に伴うさまざまな危険から、自分自身や情報を守る情報セキュリティについても知らなければならない。学科ＤＰの「コンピュータシステムについての知識を技術を修得」できる．企業経営の経験を活かし，実践的な情報倫理教育を行う．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">実施形態</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   面接授業と遠隔授業の併用実施
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">計画</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   １回&nbsp;&nbsp;引用と出典：引用と出展について理解する．講義の前に教科書１のステップ１を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>２回&nbsp;&nbsp;複数の情報源：複数の情報源を確認することの重要性を理解する．講義の前に教科書１のステップ２を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>３回&nbsp;&nbsp;反対意見・反対事例：反対意見や反対事例を探すことの重要性を理解する．講義の前に教科書１のステップ３を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>４回&nbsp;&nbsp;レポートの書き方：わかりやすいレポートの書き方について理解する．講義の前に教科書１のステップ４を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>５回&nbsp;&nbsp;中間テスト：１～４回で学習した内容から出題する．<BR/>６回&nbsp;&nbsp;倫理学で取り上げる問題：倫理学で取り上げる問題について理解する．講義の前に教科書２の1.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>７回&nbsp;&nbsp;倫理学の種類：倫理学の種類について理解する．講義の前に教科書２の1.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>８回&nbsp;&nbsp;コンピュータ倫理と情報倫理：コンピュータ倫理と情報倫理について理解する．講義の前に教科書２の1.2節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>９回&nbsp;&nbsp;セキュリティリスク：セキュリティリスクについて理解する．講義の前に教科書２の2.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>10回&nbsp;&nbsp;不正アクセス：不正アクセスについて理解する．講義の前に教科書２の2.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>11回&nbsp;&nbsp;セキュリティ対策：セキュリティ対策について理解する．講義の前に教科書２の2.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>12回&nbsp;&nbsp;マルウェア：マルウェアについて理解する．講義の前に教科書２の2.2節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>13回&nbsp;&nbsp;サイバー犯罪：サイバー犯罪について理解する．講義の前に教科書２の3.1節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>14回&nbsp;&nbsp;個人情報の保護：個人情報の保護について理解する．講義の前に教科書２の3.2節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>15回&nbsp;&nbsp;知的所有権：知的所有権について理解する．講義の前に教科書２の3.3節を読んでおき，講義の後にノート整理を行う（各2時間）．<BR/>最終回&nbsp;&nbsp;期末試験：6回～15回で学習した内容から出題する．<BR/>1回～15回にはICTを活用した授業を含む
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">教科書</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   教科書１：「コピペと言われないレポートの書き方教室」&nbsp;&nbsp;山口裕之，新曜社		<BR/>教科書２：「学生時代に学びたい情報倫理」&nbsp;&nbsp;鞆大輔，共立出版
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">参考書</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   他大学のインターネットで公開されているオープンコースウェア
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">学習到達目標</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   引用と出典について理解できる，複数の情報源を探すことの大切さを身に着ける，反対意見や反対事例を盛り込んだレポートの書き方を覚える，倫理学の種類を理解できる，コンピュータ倫理と情報倫理の違いを理解できる，セキュリティリスクや不正アクセスの実態を把握できるとともにとるべき対策を理解できる，マルウエアについて理解できる，個人情報とは何かを理解し適切な保護手段を実行できる，知的所有権を正しく理解できる．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">方法と特徴</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   授業の前半（中間テスト前）では，著作権を十分に考慮し正しい倫理観に基づいたレポートを書けるための基本知識を身に着けることに時間を費やす．授業の後半では，スマートフォンやコンピュータを使う上で，犯罪に巻き込まれないばかりか犯罪を犯さないための基本知識を身に着けることに時間を費やす．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">成績評価の方法</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   課題40%，中間試験30％，期末試験30％の合計100％に対して60％以上を合格とする．中間試験で正答率が低い問題について授業で解説を行う．<BR/>Q評価の基準：4回以上課題未提出の場合はQ評価となる．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+        
+        
+        
+        
+        <tr bgcolor="#FFFFFF">
+          <td nowrap bgcolor="#99FFCC">
+          
+          
+            <font color="#000000">教員からのメッセージ</font>
+          
+          </td>
+          <td colspan="3" style="word-break:break-all;">
+            
+
+                   
+                   著作権を尊重し倫理に抵触しないことは正しいレポートを書くことの必要条件である．正しいレポートが書けるよう授業で学ぶ．インターネットの利用は大学での学習に欠くべからざるものである．インターネット利用で犯罪に巻き込まれない，犯罪を犯さないといった基本的な事柄を授業で学ぶ．非常に実用的な授業である．
+                   &nbsp;
+
+          </td>
+        </tr>
+        
+        
+		
+    	<tr>
+    		
+	  			<td width="80" align="left" bgcolor="#99FFCC" class="txt12"><font color="#000000">添付ファイル<br>(5MBまで）</font></td>
+			
+   			 
+    		<input type="hidden" name="statusType" value="">
+	  		<input type="hidden" name="selectIndex" value="">
+    		<td class="txt12" colspan="3" bgcolor="#FFFFFF">
+    			<table border="0" cellpadding="0" cellspacing="10">
+	 				<tr>
+	 					<td>
+	 						<table border="1" cellspacing="0" cellpadding="3" class="txt12" align="left">
+								<tr bgcolor="#FFFFFF">
+									
+									<td class="txt12" bgcolor="#6699FF" width="130" nowrap align="center"></td>
+									<td class="txt12" bgcolor="#6699FF" width="300" nowrap align="center">
+										
+										
+											<font color="#FFFFFF">添付ファイル名</font>
+										
+										
+										
+									</td>
+									<td class="txt12" bgcolor="#6699FF" width="300" nowrap align="center">
+										
+										
+											<font color="#FFFFFF">説明</font>
+										
+										
+										
+									</td>
+	 							</tr>
+	 							
+	 						</table>
+						</td>
+					</tr>
+				</table>
+    		</td>
+		 </tr>
+		 
+      </table>
+    </td>
+  </tr>
+</table>
+-->
+
+
+
+
+
+<div id="notPrintFoot">
+
+
+<form name="Syllabus2Form" method="post" action="/syllabus2/syllabusReferenceContents.do">
+<table width="100%" border="0" cellpadding="0" cellspacing="10">
+  <tr>
+    <td align="left" class="txt12" width="100">
+    
+    
+    
+      <input type="image" name="button_kind.back" src="/UI/image/syllabus2/b_back.gif" border="0" onclick="return dbClick();" style="cursor:hand;cursor:pointer" alt="前画面へ戻る">
+    
+    </td>
+    <td align="center" class="txt12" width="100">&nbsp</td>
+  </tr>
+</table>
+</form>
+
+
+
+
+  <table width="630" border="0" cellspacing="0" cellpadding="0" align="center">
+    <tr> 
+      <td align="center" height="20"><img src="/UI/image/common/bar.gif"></td>
+    </tr>
+    <tr>
+      <td align="center" class="txt10" nowrap><font color="#666666">COPYRIGHT&copy;AICHI INSTITUTE OF TECHNOLOGY ALL RIGHTS RESERVED.</font></td>
+    </tr>
+  </table>
+  <br>
+
+
+</div>
+
+
+</body>
+</html>
