@@ -1,0 +1,73 @@
+@charset "UTF-8";
+/* CSS Document */
+
+.table {
+	display: flex;
+	flex-direction: column;
+	margin: 5%;
+}
+.table .main {
+	display: flex;
+	flex-direction: column;
+}
+.table .main .t {
+	display: flex;
+	flex-direction: row;
+}
+.table .main .t .a{
+	width: 15%;
+}
+.table .main .t .d{
+	padding: 0.5%;
+}
+.table .main .t .n{
+	width: 17%;
+	height: auto;
+	padding: 0.5%;
+	border: solid;
+}
+.table .main .t .n .name{
+	display: flex;
+	height: 25px;
+}
+.table .main .t .n .teacher{
+	display: flex;
+	height: 25px;	
+}
+.table .main .t .n .room{
+	display: flex;
+	height: 25px;
+	color:#ff0f7f;
+}
+.table .main .t .n .sirabasu{
+	display: flex;
+	height: 25px;
+}
+.table .main .t .n .book{
+	display: flex;
+	height: 20px;
+	color:#12C812;
+}
+.table .main .t .n .teams{
+	display: flex;
+	height: 20px;
+	color:#ff7f7f;
+}
+.table .main .t .n .moodle{
+	display: flex;
+	height: 20px;
+	color:#ff7f7f;	
+}
+.table .main .t .n1{
+	width: 5%;
+	height: auto;
+	padding: 0.5%;
+}
+.table .main .t .n1 {
+	margin: 0px;
+}
+.table .main .t .n h3{
+	display: flex;
+	justify-content: center;
+	margin: 0px;
+}
