@@ -65,11 +65,7 @@ body {
     overflow: hidden;
 }
 
-.teams {
-    height: 2.5rem;
-    color: #ff7f7f;
-}
-
+.teams,
 .moodle {
     height: 2.5rem;
     color: #ff7f7f;
