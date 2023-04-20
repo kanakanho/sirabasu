@@ -60,6 +60,11 @@ body {
     color: #12C812;
 }
 
+.book_box {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 .teams {
     height: 2.5rem;
     color: #ff7f7f;
