@@ -1,0 +1,71 @@
+html {
+    font-size: 10px;
+}
+
+body {
+    margin: 2px;
+    padding: 0px;
+}
+
+.table {
+    width: fit-content;
+    margin-inline: auto;
+
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: 75px repeat(5, minmax(200px, 1fr));
+    grid-template-rows: 50px repeat(4, calc(17.5rem + 10px));
+}
+
+.day {
+    padding: 5px;
+    overflow: hidden;
+    font-size: 1.6rem;
+}
+
+.day:nth-child(5n +1) {
+    padding: 0px;
+    font-size: 2rem;
+
+    text-align: center;
+    vertical-align: top;
+    line-height: 50px;
+}
+
+.day {
+    border: 1px solid black;
+}
+
+.number,
+.start,
+.finish {
+    text-align: center;
+}
+
+.name {
+    height: 2.5rem;
+}
+
+.room {
+    height: 2.5rem;
+    color: #ff0f7f;
+}
+
+.sirabasu {
+    height: 2.5rem;
+}
+
+.book {
+    height: 2.5rem;
+    color: #12C812;
+}
+
+.teams {
+    height: 2.5rem;
+    color: #ff7f7f;
+}
+
+.moodle {
+    height: 2.5rem;
+    color: #ff7f7f;
+}
