@@ -1,0 +1,222 @@
+[
+    {
+        "月": [
+            {
+                "I": {
+                    "name": "コンピュータリテラシ",
+                    "teacher": "水野 勝教",
+                    "room": "1-502",
+                    "book": "macOSVentura",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=72"
+                }
+            },
+            {
+                "II": {
+                    "name": "キャリアデザイン",
+                    "teacher": "澤野 弘明",
+                    "room": "G2110（全体）4-404（チューター）",
+                    "book": "",
+                    "teams": "https://teams.microsoft.com/l/channel/19%3aVRKkez2_osxyeHKyasaRAJaOBVXTClwi4iSJjWh705Q1%40thread.tacv2/%25E4%25B8%2580%25E8%2588%25AC?groupId=2f34c548-9ef6-4774-8cff-49e6023a9d68&amp;tenantId=1dd4d0da-8011-41fc-889e-d7ee3fec9eb6",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=3969"
+                }
+            },
+            {
+                "III": {
+                    "name": "情報社会及び情報倫理",
+                    "teacher": "中村 栄治",
+                    "room": "G2110",
+                    "book": "コピペと言われないレポート学生時代に学びたい情報倫理",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=4020"
+                }
+            },
+            {
+                "IV": {
+                    "name": "",
+                    "teacher": "",
+                    "room": "",
+                    "book": "",
+                    "teams": "",
+                    "moodle": ""
+                }
+            }
+        ]
+    },
+    {
+        "火": [
+            {
+                "I": {
+                    "name": "",
+                    "teacher": "",
+                    "room": "",
+                    "book": "",
+                    "teams": "",
+                    "moodle": ""
+                }
+            },
+            {
+                "II": {
+                    "name": "CEC",
+                    "teacher": "太田 晶子",
+                    "room": "G3302",
+                    "book": "",
+                    "teams": "https://teams.microsoft.com/l/channel/19%3aY04KLpUz15yBMAucWNyI2zmeHHagVjV3TqQQPrXqlto1%40thread.tacv2/%25E4%25B8%2580%25E8%2588%25AC?groupId=dc1ef1ef-bee0-4c7b-b7b7-7f2e0cfc7627&amp;tenantId=1dd4d0da-8011-41fc-889e-d7ee3fec9eb6",
+                    "moodle": ""
+                }
+            },
+            {
+                "III": {
+                    "name": "線形代数１",
+                    "teacher": "松本 耕二",
+                    "room": "G2209",
+                    "book": "ベクトルと行列",
+                    "teams": "",
+                    "moodle": ""
+                }
+            },
+            {
+                "IV": {
+                    "name": "CEA",
+                    "teacher": "ボデル マーク",
+                    "room": "G3403",
+                    "book": "ManyThings",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=3870"
+                }
+            }
+        ]
+    },
+    {
+        "水": [
+            {
+                "I": {
+                    "name": "コンピュータ概論",
+                    "teacher": "小野木克明",
+                    "room": "1-502",
+                    "book": "コンピュータ概論",
+                    "teams": "",
+                    "moodle": ""
+                }
+            },
+            {
+                "II": {
+                    "name": "情報数学１",
+                    "teacher": "鈴木 晋",
+                    "room": "1-501",
+                    "book": "離散数学",
+                    "teams": "",
+                    "moodle": ""
+                }
+            },
+            {
+                "III": {
+                    "name": "",
+                    "teacher": "",
+                    "room": "",
+                    "book": "",
+                    "teams": "",
+                    "moodle": ""
+                }
+            },
+            {
+                "IV": {
+                    "name": "",
+                    "teacher": "",
+                    "room": "",
+                    "book": "",
+                    "teams": "",
+                    "moodle": ""
+                }
+            }
+        ]
+    },
+    {
+        "木": [
+            {
+                "I": {
+                    "name": "プログラミング及び演習",
+                    "teacher": "河辺 義信",
+                    "room": "1-502",
+                    "book": "",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=3933"
+                }
+            },
+            {
+                "II": {
+                    "name": "プログラミング及び演習",
+                    "teacher": "河辺 義信",
+                    "room": "1-502",
+                    "book": "",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=3933"
+                }
+            },
+            {
+                "III": {
+                    "name": "データサイエンス基礎数理",
+                    "teacher": "増本 周平",
+                    "room": "G2311",
+                    "book": "基礎数学",
+                    "teams": "https://teams.microsoft.com/l/channel/19%3aIYWdbQRJN6VrJ5KpiC6TTAwfuNRUctGYRSrv5W97mhc1%40thread.tacv2/%25E4%25B8%2580%25E8%2588%25AC?groupId=cba405ec-3879-43f8-b8ae-2b8f12e3f784&amp;tenantId=1dd4d0da-8011-41fc-889e-d7ee3fec9eb6",
+                    "moodle": ""
+                }
+            },
+            {
+                "IV": {
+                    "name": "微分積分１",
+                    "teacher": "真島 一成",
+                    "room": "G2311",
+                    "book": "微分積分１",
+                    "teams": "",
+                    "moodle": ""
+                }
+            }
+        ]
+    },
+    {
+        "金": [
+            {
+                "I": {
+                    "name": "現代社会の探究",
+                    "teacher": "市川 紀美",
+                    "room": "G2209",
+                    "book": "",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=3980"
+                }
+            },
+            {
+                "II": {
+                    "name": "論理回路",
+                    "teacher": "河辺 義信",
+                    "room": "G2210",
+                    "book": "はじめての論理回路",
+                    "teams": "",
+                    "moodle": "https://cms.aitech.ac.jp/course/view.php?id=3912"
+                }
+            },
+            {
+                "III": {
+                    "name": "中国語A",
+                    "teacher": "張 新力",
+                    "room": "G2505",
+                    "book": "スリーステップで学ぶ",
+                    "teams": "",
+                    "moodle": ""
+                }
+            },
+            {
+                "IV": {
+                    "name": "健康・スポーツ科学実習1",
+                    "teacher": "中野",
+                    "room": "体育館",
+                    "book": "体操服・靴",
+                    "teams": "",
+                    "moodle": ""
+                }
+            }
+        ]
+    }
+]
